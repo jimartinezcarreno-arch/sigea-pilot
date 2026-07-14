@@ -5,8 +5,11 @@ from unittest.mock import patch
 from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
+from django.core.files.uploadedfile import SimpleUploadedFile
+from openpyxl import Workbook
 
 from .models import Aula, Clase, Docente, Edificio, Institucion, ModalidadAcademica, MomentoAcademico, PerfilUsuario, PeriodoAcademico, Sede
+from .services.excel_importer import ExcelImporter
 from .tenant_utils import set_current_institucion
 
 
@@ -98,3 +101,44 @@ class BootstrapPilotCommandTests(TestCase):
         self.assertTrue(usuario.check_password('ClaveSegura123!'))
         self.assertEqual(usuario.perfil_sigea.institucion, institucion)
         self.assertEqual(usuario.perfil_sigea.rol, 'ADMIN')
+
+
+class ExcelImporterTests(TestCase):
+    def setUp(self):
+        self.institucion = Institucion.objects.create(
+            nombre='Institucion de prueba', subdominio='importacion',
+            hora_inicio_jornada=time(6, 0), hora_fin_jornada=time(22, 0),
+        )
+
+    def crear_archivo(self, hora_inicio='0800'):
+        libro = Workbook()
+        hoja = libro.active
+        hoja.append([
+            'PERIODO', 'NRC', 'TITULO', 'NOMBRE_DOCENTE', 'SEDE', 'EDIFICIO',
+            'SALON', 'HI', 'HF', 'L', 'M', 'I', 'J', 'V', 'S', 'D',
+        ])
+        hoja.append([
+            '202610', 'NRC-1', 'Matematicas', 'Ana Perez', 'Sede piloto',
+            'Edificio A', 'A-101', hora_inicio, '1000', 'X', '', '', '', '', '', '',
+        ])
+        from io import BytesIO
+        contenido = BytesIO()
+        libro.save(contenido)
+        return SimpleUploadedFile(
+            'programacion.xlsx',
+            contenido.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+
+    def test_crea_espacios_faltantes_y_conserva_horario_si_hay_errores(self):
+        resultado = ExcelImporter(self.crear_archivo(), self.institucion).importar()
+        self.assertEqual(resultado['errores'], [])
+        self.assertEqual(resultado['total'], 1)
+        aula = Aula.unfiltered.get(institucion=self.institucion, nombre='A-101')
+        self.assertEqual(aula.capacidad, 30)
+
+        resultado_invalido = ExcelImporter(
+            self.crear_archivo(hora_inicio='hora-invalida'), self.institucion
+        ).importar()
+        self.assertTrue(resultado_invalido['errores'])
+        self.assertEqual(Clase.unfiltered.filter(institucion=self.institucion).count(), 1)

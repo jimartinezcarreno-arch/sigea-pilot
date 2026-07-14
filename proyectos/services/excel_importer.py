@@ -69,6 +69,7 @@ class ExcelImporter:
         self.total = 0
         self.sedes_creadas = []
         self.edificios_creados = []
+        self.aulas_creadas = []
 
     def convertir_hora(self, valor):
 
@@ -202,11 +203,7 @@ class ExcelImporter:
         )
 
 
-        Clase.unfiltered.filter(
-            institucion=self.institucion
-        ).delete()
-
-        logger.info("Importando clases...")
+        logger.info("Validando e importando clases...")
 
         dias = {
             "lunes": 1,
@@ -218,7 +215,7 @@ class ExcelImporter:
             "domingo": 7,
         }
 
-        total = 0
+        clases_por_crear = []
 
         asignador = AsignadorAulas()
 
@@ -344,10 +341,24 @@ class ExcelImporter:
                     ).first()
 
                 if not aula:
-                    self.errores.append(
-                        f"Aula no encontrada: {nombre_aula}"
+                    if not nombre_aula:
+                        self.errores.append(
+                            f"Fila sin aula (edificio: {edificio.nombre})."
+                        )
+                        continue
+
+                    # Una instituci\u00f3n nueva puede iniciar desde su programaci\u00f3n.
+                    # Los datos del espacio se completan despu\u00e9s desde administraci\u00f3n.
+                    aula = Aula.unfiltered.create(
+                        institucion=self.institucion,
+                        edificio=edificio,
+                        nombre=nombre_aula,
+                        capacidad=30,
+                        tipo_espacio="AULA",
                     )
-                    continue
+                    self.aulas_creadas.append(
+                        f"{nombre_aula} ({edificio.nombre})"
+                    )
 
             # -----------------------------
             # DOCENTE
@@ -366,13 +377,25 @@ class ExcelImporter:
                 }
             )
 
-            hora_inicio = self.convertir_hora(
-                fila[indices["hora_inicio"]]
-            )
+            try:
+                hora_inicio = self.convertir_hora(
+                    fila[indices["hora_inicio"]]
+                )
+                hora_fin = self.convertir_hora(
+                    fila[indices["hora_fin"]]
+                )
+            except (TypeError, ValueError):
+                self.errores.append(
+                    f"NRC {fila[indices['nrc']] or ''}: horas inv\u00e1lidas. "
+                    "Usa formato HHMM, por ejemplo 0830."
+                )
+                continue
 
-            hora_fin = self.convertir_hora(
-                fila[indices["hora_fin"]]
-            )
+            if not hora_inicio or not hora_fin or hora_inicio >= hora_fin:
+                self.errores.append(
+                    f"NRC {fila[indices['nrc']] or ''}: el rango de horas es inv\u00e1lido."
+                )
+                continue
 
             asignatura = str(
                 fila[indices["asignatura"]] or ""
@@ -394,7 +417,7 @@ class ExcelImporter:
 
                 try:
 
-                    Clase.unfiltered.create(
+                    clases_por_crear.append(Clase(
 
                         institucion=self.institucion,
 
@@ -416,9 +439,7 @@ class ExcelImporter:
 
                         hora_fin=hora_fin,
 
-                    )
-
-                    total += 1
+                    ))
 
                 except (ValidationError, Exception) as e:
 
@@ -427,10 +448,33 @@ class ExcelImporter:
                     )
 
 
-        logger.info(f"Clases creadas: {total}")
-        logger.info(f"Errores: {len(self.errores)}")
         if self.errores:
-            logger.warning(f"Primeros errores: {self.errores[:10]}")
+            logger.warning(f"Importaci\u00f3n cancelada. Errores: {self.errores[:10]}")
+            return {
+                "total": 0,
+                "errores": self.errores,
+                "sedes_creadas": self.sedes_creadas,
+                "edificios_creados": self.edificios_creados,
+                "aulas_creadas": self.aulas_creadas,
+            }
+
+        if not clases_por_crear:
+            return {
+                "total": 0,
+                "errores": ["El archivo no contiene clases v\u00e1lidas para importar."],
+                "sedes_creadas": self.sedes_creadas,
+                "edificios_creados": self.edificios_creados,
+                "aulas_creadas": self.aulas_creadas,
+            }
+
+        # Solo se reemplaza la programaci\u00f3n vigente una vez el archivo pas\u00f3
+        # todas las validaciones necesarias.
+        Clase.unfiltered.filter(institucion=self.institucion).delete()
+        Clase.unfiltered.bulk_create(clases_por_crear)
+        total = len(clases_por_crear)
+
+        logger.info(f"Clases creadas: {total}")
+        logger.info("Errores: 0")
 
         return {
 
@@ -441,5 +485,7 @@ class ExcelImporter:
             "sedes_creadas": self.sedes_creadas,
 
             "edificios_creados": self.edificios_creados,
+
+            "aulas_creadas": self.aulas_creadas,
 
         }

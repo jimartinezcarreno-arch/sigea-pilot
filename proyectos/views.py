@@ -329,6 +329,13 @@ def subir_excel(request):
             + ", ".join(sorted(set(resultado["edificios_creados"])))
         )
 
+    if resultado.get("aulas_creadas"):
+        messages.info(
+            request,
+            "Aulas nuevas creadas con capacidad provisional de 30 personas: "
+            + ", ".join(sorted(set(resultado["aulas_creadas"])))
+        )
+
     messages.success(
         request,
         f"Importación finalizada. Se cargaron {resultado['total']} clases."
