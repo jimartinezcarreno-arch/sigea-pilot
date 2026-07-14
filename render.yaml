@@ -1,12 +1,13 @@
 databases:
   - name: sigea-pilot-db
-    plan: basic-256mb
+    plan: free
     databaseName: sigea_pilot
     user: sigea
 
 services:
   - type: web
     name: sigea-pilot
+    plan: free
     runtime: python
     buildCommand: bash build.sh
     startCommand: gunicorn planimetria.wsgi:application
