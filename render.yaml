@@ -29,3 +29,5 @@ services:
         value: sigea-pilot.onrender.com
       - key: REQUIRE_LOGIN
         value: "True"
+      - key: PILOT_INSTITUTION_NAME
+        value: SIGEA Pilot

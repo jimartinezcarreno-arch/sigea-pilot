@@ -1,7 +1,10 @@
+import os
 from datetime import date, time
+from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 
 from .models import Aula, Clase, Docente, Edificio, Institucion, ModalidadAcademica, MomentoAcademico, PerfilUsuario, PeriodoAcademico, Sede
 from .tenant_utils import set_current_institucion
@@ -76,3 +79,22 @@ class SIGEATestCase(TestCase):
         user.perfil_sigea.save(update_fields=['institucion'])
         respuesta = self.client.get('/', HTTP_HOST='inst1.localhost')
         self.assertEqual(respuesta.status_code, 200)
+
+
+class BootstrapPilotCommandTests(TestCase):
+    @patch.dict(os.environ, {
+        'DEFAULT_TENANT_SUBDOMAIN': 'piloto-prueba',
+        'INITIAL_ADMIN_USERNAME': 'admin-piloto',
+        'INITIAL_ADMIN_PASSWORD': 'ClaveSegura123!',
+        'INITIAL_ADMIN_EMAIL': 'admin@example.com',
+    }, clear=False)
+    def test_crea_institucion_y_administrador_de_forma_idempotente(self):
+        call_command('bootstrap_pilot')
+        call_command('bootstrap_pilot')
+
+        institucion = Institucion.objects.get(subdominio='piloto-prueba')
+        usuario = get_user_model().objects.get(username='admin-piloto')
+        self.assertTrue(usuario.is_superuser)
+        self.assertTrue(usuario.check_password('ClaveSegura123!'))
+        self.assertEqual(usuario.perfil_sigea.institucion, institucion)
+        self.assertEqual(usuario.perfil_sigea.rol, 'ADMIN')
