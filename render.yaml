@@ -1,0 +1,30 @@
+databases:
+  - name: sigea-pilot-db
+    plan: basic-256mb
+    databaseName: sigea_pilot
+    user: sigea
+
+services:
+  - type: web
+    name: sigea-pilot
+    runtime: python
+    buildCommand: bash build.sh
+    startCommand: gunicorn planimetria.wsgi:application
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sigea-pilot-db
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: sigea-pilot.onrender.com
+      - key: DEFAULT_TENANT_SUBDOMAIN
+        value: sigea
+      - key: PRIMARY_TENANT_HOST
+        value: sigea-pilot.onrender.com
+      - key: REQUIRE_LOGIN
+        value: "True"

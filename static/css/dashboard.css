@@ -1,0 +1,463 @@
+:root {
+    /* Paleta de Colores Premium - Diseño Moderno */
+    --primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --primary-solid: #667eea;
+    --primary-dark: #5568d3;
+    --primary-light: #8b9ff0;
+
+    --secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --secondary-solid: #f5576c;
+    --secondary-light: #f8a8b8;
+
+    --accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --accent-solid: #4facfe;
+    --accent-light: #7cc4ff;
+
+    --success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --success-solid: #11998e;
+    --success-light: #38ef7d;
+
+    --danger: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+    --danger-solid: #eb3349;
+    --danger-light: #f45c43;
+
+    --warning: linear-gradient(135deg, #f09819 0%, #edde5d 100%);
+    --warning-solid: #f09819;
+    --warning-light: #edde5d;
+
+    /* Colores de fondo y texto */
+    --background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    --card: #ffffff;
+    --card-hover: #ffffff;
+
+    --border: rgba(102, 126, 234, 0.15);
+
+    --text: #1a1a2e;
+    --text-light: #6c757d;
+    --text-muted: #adb5bd;
+
+    /* Sombras y efectos */
+    --radius: 24px;
+    --radius-sm: 16px;
+    --radius-xs: 12px;
+
+    --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.05);
+    --shadow: 0 10px 30px rgba(102, 126, 234, 0.15);
+    --shadow-lg: 0 20px 60px rgba(102, 126, 234, 0.25);
+    --shadow-hover: 0 25px 50px rgba(102, 126, 234, 0.35);
+
+    --shadow-success: 0 10px 30px rgba(17, 153, 142, 0.15);
+    --shadow-danger: 0 10px 30px rgba(235, 51, 73, 0.15);
+    --shadow-warning: 0 10px 30px rgba(240, 152, 25, 0.15);
+}
+
+body {
+    background-color: var(--background);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+/* --- BARRA LATERAL (SIDEBAR) --- */
+.sidebar {
+    background-color: #ffffff;
+    border-right: 1px solid var(--border);
+    min-height: 100vh;
+    padding: 32px 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+.sidebar h4 {
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: var(--text);
+    letter-spacing: -0.025em;
+    margin-bottom: 24px;
+    background: var(--primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.sidebar hr {
+    border-top: 1px solid var(--border);
+    opacity: 1;
+    margin: 20px 0;
+}
+
+.sidebar label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-light);
+    margin-bottom: 6px;
+    display: block;
+}
+
+.sidebar .form-select,
+.sidebar .form-control {
+    border-radius: var(--radius-xs);
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    font-size: 0.875rem;
+    color: var(--text);
+    background-color: #f8fafc;
+    transition: all 0.2s ease-in-out;
+}
+
+.sidebar .form-select:focus,
+.sidebar .form-control:focus {
+    border-color: var(--primary-solid);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    background-color: #ffffff;
+    outline: none;
+}
+
+.sidebar .btn-primary {
+    background: var(--primary);
+    border: none;
+    border-radius: var(--radius-xs);
+    padding: 12px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    letter-spacing: 0.025em;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.sidebar .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    filter: brightness(1.05);
+}
+
+.sidebar .btn-success {
+    background: var(--success);
+    border: none;
+    border-radius: var(--radius-xs);
+    padding: 12px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    letter-spacing: 0.025em;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.sidebar .btn-success:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    filter: brightness(1.05);
+}
+
+.sidebar h6 {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-light);
+    margin-top: 24px;
+    margin-bottom: 12px;
+}
+
+/* --- TARJETAS DE ESTADÍSTICAS (KPIS) --- */
+.stats-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--primary);
+}
+
+.stats-card-clases::before {
+    background: var(--primary);
+}
+
+.stats-card-aulas::before {
+    background: var(--accent);
+}
+
+.stats-card-libres::before {
+    background: var(--success);
+}
+
+.stats-card-ocupadas::before {
+    background: var(--danger);
+}
+
+.stats-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+    border-color: var(--primary-light);
+}
+
+.stats-card-aulas:hover {
+    border-color: var(--accent-light);
+}
+
+.stats-card-libres:hover {
+    border-color: var(--success-light);
+}
+
+.stats-card-ocupadas:hover {
+    border-color: var(--danger-light);
+}
+
+.stats-filter {
+    appearance: none;
+    width: 100%;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.stats-filter.is-active {
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2), var(--shadow);
+    border-color: var(--primary-solid);
+    transform: translateY(-2px);
+}
+
+.stats-card-libres.is-active {
+    border-color: var(--success-solid);
+    box-shadow: 0 0 0 3px rgba(17, 153, 142, 0.16), var(--shadow-success);
+}
+
+.stats-card-ocupadas.is-active {
+    border-color: var(--danger-solid);
+    box-shadow: 0 0 0 3px rgba(235, 51, 73, 0.15), var(--shadow-danger);
+}
+
+/* Rejilla masonry: cada tarjeta ocupa el siguiente espacio disponible. */
+.aulas-grid {
+    position: relative;
+    width: 100%;
+    min-height: 1px;
+    transition: height 0.25s ease;
+}
+
+.aula-grid-item {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: transform 0.25s ease, opacity 0.2s ease;
+}
+
+.aulas-grid .dashboard-card {
+    margin-bottom: 0;
+}
+
+.aula-grid-item[hidden] {
+    display: none;
+}
+
+/* --- TARJETAS DE AULA (AULA CARDS) --- */
+.dashboard-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--primary-solid);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.dashboard-card.libre {
+    border-left-color: var(--success-solid);
+}
+
+.dashboard-card.ocupada {
+    border-left-color: var(--danger-solid);
+}
+
+.dashboard-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--border);
+}
+
+.info-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+}
+
+.info-value {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 0;
+}
+
+/* --- BADGES DE ESTADO --- */
+.estado-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: var(--radius-xs);
+    padding: 6px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.estado-libre {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.estado-ocupada {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+/* --- ALERTAS DENTRO DE TARJETAS --- */
+.dashboard-card .alert {
+    border: none;
+    border-radius: var(--radius-xs);
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+    line-height: 1.4;
+}
+
+.dashboard-card .alert-success {
+    background-color: #f0fdf4;
+    color: #166534;
+    border: 1px solid #dcfce7;
+    font-weight: 500;
+}
+
+.dashboard-card .alert-danger {
+    background-color: #fff1f2;
+    color: #9f1239;
+    border: 1px solid #ffe4e6;
+}
+
+.dashboard-card .alert-info {
+    background-color: #f0f9ff;
+    color: #075985;
+    border: 1px solid #e0f2fe;
+}
+
+/* --- TABLAS DENTRO DE TARJETAS (REEMPLAZO DE TABLE-DARK) --- */
+.dashboard-card table.table {
+    background-color: transparent !important;
+    color: var(--text) !important;
+    margin-bottom: 0;
+    font-size: 0.8rem;
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.dashboard-card table.table th {
+    background-color: #f8fafc !important;
+    color: var(--text-light) !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    padding: 8px 12px;
+    border-bottom: 2px solid var(--border) !important;
+    border-top: none !important;
+}
+
+.dashboard-card table.table td {
+    background-color: transparent !important;
+    color: var(--text) !important;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border) !important;
+}
+
+.dashboard-card table.table tr:last-child td {
+    border-bottom: none !important;
+}
+
+.dashboard-card hr {
+    border-top: 1px solid var(--border);
+    opacity: 0.6;
+    margin: 16px 0;
+}
+
+.dashboard-card p strong {
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+.dashboard-card p span.libre {
+    color: #10b981;
+    font-weight: 700;
+}
+
+.dashboard-card p span.ocupada {
+    color: #ef4444;
+    font-weight: 700;
+}
+
+/* --- DISEÑO RESPONSIVO --- */
+@media (max-width: 768px) {
+    .sidebar {
+        min-height: auto;
+        padding: 20px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .dashboard-card {
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .info-value {
+        font-size: 1.15rem;
+    }
+
+    .estado-badge {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+    }
+}
+
+/* --- ANIMACIONES --- */
+@media (prefers-reduced-motion: no-preference) {
+    .dashboard-card,
+    .stats-card,
+    .sidebar .form-select,
+    .sidebar .form-control,
+    .sidebar .btn-primary,
+    .sidebar .btn-success {
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+                    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+                    border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                    background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+}
+
+/* Accesibilidad */
+.dashboard-card:focus-visible,
+.stats-card:focus-visible {
+    outline: 3px solid var(--primary-solid);
+    outline-offset: 2px;
+}

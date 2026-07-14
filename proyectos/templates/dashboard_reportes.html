@@ -1,0 +1,451 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard de Reportes</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --primary-solid: #667eea;
+            --secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --secondary-solid: #f5576c;
+            --accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --accent-solid: #4facfe;
+            --success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --success-solid: #11998e;
+            --danger: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            --danger-solid: #eb3349;
+            --warning: linear-gradient(135deg, #f09819 0%, #edde5d 100%);
+            --warning-solid: #f09819;
+            --background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+            --card: #ffffff;
+            --border: rgba(102, 126, 234, 0.15);
+            --text: #1a1a2e;
+            --text-light: #6c757d;
+            --radius: 24px;
+            --radius-sm: 16px;
+            --shadow: 0 10px 30px rgba(102, 126, 234, 0.15);
+            --shadow-hover: 0 25px 50px rgba(102, 126, 234, 0.35);
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            margin: 20px;
+            line-height: 1.6;
+        }
+        h2, h3 {
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+            gap: 30px;
+            align-items: start;
+        }
+        .card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.95) 100%);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            width: 100%;
+            min-width: 0;
+            box-shadow: var(--shadow);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .card:hover::before {
+            opacity: 1;
+        }
+        .card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: var(--shadow-hover);
+        }
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.95) 100%);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 30px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.08) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .stat-card:hover::after {
+            opacity: 1;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: var(--shadow-hover);
+        }
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+        .stat-label {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        canvas {
+            width: 100% !important;
+            height: 300px !important;
+        }
+        .ranking-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+        .ranking-table th, .ranking-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .ranking-table th {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            color: var(--primary-solid);
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+        .ranking-table tr:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        }
+        .ranking-table tr:last-child td {
+            border-bottom: none;
+        }
+        .ranking-tools {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0 12px;
+        }
+        .ranking-tools .form-control {
+            border-radius: 12px;
+            border-color: var(--border);
+            padding: 10px 14px;
+        }
+        .ranking-scroll {
+            max-height: 430px;
+            overflow: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+        }
+        .ranking-scroll .ranking-table { margin-top: 0; }
+        .ranking-scroll thead th { position: sticky; top: 0; z-index: 1; }
+        @media (max-width: 600px) {
+            body { margin: 12px; }
+            .dashboard { grid-template-columns: 1fr; }
+            .card { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <nav style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 12px 0; margin-bottom: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <span style="font-weight: 800; font-size: 1.25rem; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">SIGEA</span>
+                <div class="d-flex gap-2">
+                    <a href="/" style="color: #475569; font-weight: 600; font-size: 0.875rem; padding: 8px 16px; border-radius: 8px; text-decoration: none; transition: all 0.2s;"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+                    <a href="/dashboard-reportes/" style="color: #4f46e5; font-weight: 600; font-size: 0.875rem; padding: 8px 16px; border-radius: 8px; text-decoration: none; background: rgba(79, 70, 229, 0.08);"><i class="bi bi-bar-chart"></i> Reportes</a>
+                    <a href="/conflictos/" style="color: #475569; font-weight: 600; font-size: 0.875rem; padding: 8px 16px; border-radius: 8px; text-decoration: none; transition: all 0.2s;"><i class="bi bi-exclamation-triangle"></i> Conflictos</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <h2 class="mb-4">Dashboard de Reportes - {{ institucion_activa.nombre }}</h2>
+
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-value">{{ total_aulas }}</div>
+                <div class="stat-label">Total Aulas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ total_docentes }}</div>
+                <div class="stat-label">Total Docentes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ total_clases }}</div>
+                <div class="stat-label">Total Clases</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ ocupacion_promedio }}%</div>
+                <div class="stat-label">Ocupación Promedio</div>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="card">
+                <h3>Tasa de Ocupación por Aula</h3>
+                <canvas id="ocupacionChart"></canvas>
+            </div>
+            <div class="card">
+                <h3>Docentes por carga horaria</h3>
+                <canvas id="docentesChart"></canvas>
+                <div class="ranking-tools">
+                    <small class="text-muted">GrÃ¡fico: 10 docentes con mayor carga</small>
+                    <span class="badge text-bg-light" id="contadorDocentes">{{ docentes_data|length }} docentes</span>
+                </div>
+                <input type="search" id="buscarDocenteReporte" class="form-control" placeholder="Buscar entre todos los docentes...">
+                <div class="ranking-scroll mt-3">
+                    <table class="ranking-table" id="tablaDocentes">
+                        <thead>
+                            <tr>
+                                <th>Docente</th>
+                                <th>Horas</th>
+                                <th>Clases</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for docente in docentes_data %}
+                            <tr>
+                                <td>{{ docente.nombre }}</td>
+                                <td>{{ docente.horas }}</td>
+                                <td>{{ docente.clases }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Top 10 Aulas por Utilización</h3>
+                <canvas id="espaciosChart"></canvas>
+                <table class="ranking-table">
+                    <thead>
+                        <tr>
+                            <th>Aula</th>
+                            <th>Edificio</th>
+                            <th>Clases</th>
+                            <th>Capacidad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for espacio in espacios_data %}
+                        <tr>
+                            <td>{{ espacio.nombre }}</td>
+                            <td>{{ espacio.edificio }}</td>
+                            <td>{{ espacio.clases }}</td>
+                            <td>{{ espacio.capacidad }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ocupacionData = {
+            labels: {{ ocupacion_labels_json|safe }},
+            datasets: [{
+                label: "Ocupación (%)",
+                data: {{ ocupacion_data_json|safe }},
+                backgroundColor: (context) => {
+                    const chart = context.chart;
+                    const {ctx, chartArea} = chart;
+                    if (!chartArea) return '#667eea';
+                    const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                    gradient.addColorStop(0, '#667eea');
+                    gradient.addColorStop(1, '#764ba2');
+                    return gradient;
+                },
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        };
+
+        const docentesData = {
+            labels: {{ docentes_labels_json|safe }},
+            datasets: [{
+                label: "Horas dictadas",
+                data: {{ docentes_horas_json|safe }},
+                backgroundColor: (context) => {
+                    const chart = context.chart;
+                    const {ctx, chartArea} = chart;
+                    if (!chartArea) return '#f5576c';
+                    const gradient = ctx.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
+                    gradient.addColorStop(0, '#f093fb');
+                    gradient.addColorStop(1, '#f5576c');
+                    return gradient;
+                },
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        };
+
+        const espaciosData = {
+            labels: {{ espacios_labels_json|safe }},
+            datasets: [{
+                label: "Veces asignado",
+                data: {{ espacios_clases_json|safe }},
+                backgroundColor: [
+                    '#667eea', '#764ba2', '#f5576c', '#f093fb', '#4facfe',
+                    '#00f2fe', '#11998e', '#38ef7d', '#f09819', '#edde5d'
+                ],
+                borderWidth: 0,
+                hoverOffset: 10
+            }]
+        };
+
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        font: {
+                            family: 'Inter',
+                            size: 12,
+                            weight: '600'
+                        },
+                        usePointStyle: true,
+                        padding: 20
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            family: 'Inter',
+                            size: 11
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(102, 126, 234, 0.1)'
+                    },
+                    ticks: {
+                        font: {
+                            family: 'Inter',
+                            size: 11
+                        }
+                    }
+                }
+            }
+        };
+
+        new Chart(document.getElementById("ocupacionChart"), { 
+            type: "bar", 
+            data: ocupacionData,
+            options: {
+                ...chartOptions,
+                scales: {
+                    ...chartOptions.scales,
+                    y: {
+                        ...chartOptions.scales.y,
+                        max: 100
+                    }
+                }
+            }
+        });
+        
+        new Chart(document.getElementById("docentesChart"), { 
+            type: "bar", 
+            data: docentesData,
+            options: {
+                ...chartOptions,
+                indexAxis: 'y'
+            }
+        });
+        
+        new Chart(document.getElementById("espaciosChart"), { 
+            type: "doughnut", 
+            data: espaciosData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'right',
+                        labels: {
+                            font: {
+                                family: 'Inter',
+                                size: 11,
+                                weight: '500'
+                            },
+                            usePointStyle: true,
+                            padding: 15
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+
+        const buscadorDocenteReporte = document.getElementById('buscarDocenteReporte');
+        const filasDocentes = Array.from(document.querySelectorAll('#tablaDocentes tbody tr'));
+        const contadorDocentes = document.getElementById('contadorDocentes');
+        buscadorDocenteReporte.addEventListener('input', function() {
+            const termino = this.value.trim().toLowerCase();
+            let visibles = 0;
+            filasDocentes.forEach(fila => {
+                const coincide = fila.textContent.toLowerCase().includes(termino);
+                fila.hidden = !coincide;
+                if (coincide) visibles += 1;
+            });
+            contadorDocentes.textContent = `${visibles} docente${visibles === 1 ? '' : 's'}`;
+        });
+    </script>
+</body>
+</html>

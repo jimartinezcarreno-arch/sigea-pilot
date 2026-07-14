@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mapa Interactivo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #F3F2F1; /* Azure Gray */
+            color: #323130; /* Azure Dark */
+            margin: 20px;
+        }
+        h2 {
+            color: #0078D4; /* Azure Primary */
+        }
+        #mapa {
+            border: 1px solid #ddd;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            max-width: 1000px;
+            margin: auto;
+        }
+        .aula {
+            cursor: pointer;
+            fill: #00BCF2; /* Azure Light */
+        }
+        .aula:hover {
+            fill: #0078D4; /* Azure Primary */
+        }
+        .ruta {
+            stroke: red;
+            stroke-width: 3;
+            fill: none;
+        }
+    </style>
+</head>
+<body>
+    <h2>Mapa Interactivo - {{ institucion_activa.nombre }}</h2>
+    <div id="mapa">
+        <!-- Ejemplo de plano SVG -->
+        <svg id="plano" width="800" height="600">
+            <!-- Entrada principal -->
+            <circle id="entrada" cx="50" cy="300" r="10" fill="green"></circle>
+            <!-- Aulas -->
+            <rect id="aula-101" class="aula" x="200" y="100" width="80" height="60"></rect>
+            <rect id="aula-102" class="aula" x="400" y="100" width="80" height="60"></rect>
+            <rect id="aula-103" class="aula" x="200" y="300" width="80" height="60"></rect>
+            <rect id="aula-104" class="aula" x="400" y="300" width="80" height="60"></rect>
+            <!-- Ruta dinámica -->
+            <path id="ruta" class="ruta"></path>
+        </svg>
+    </div>
+
+    <script>
+        // Grafo simple de nodos
+        const grafo = {
+            "entrada": ["aula-101", "aula-103"],
+            "aula-101": ["entrada", "aula-102"],
+            "aula-102": ["aula-101", "aula-104"],
+            "aula-103": ["entrada", "aula-104"],
+            "aula-104": ["aula-102", "aula-103"]
+        };
+
+        // Algoritmo de Dijkstra simplificado
+        function dijkstra(origen, destino) {
+            let dist = {};
+            let prev = {};
+            let nodos = Object.keys(grafo);
+
+            nodos.forEach(n => {
+                dist[n] = Infinity;
+                prev[n] = null;
+            });
+            dist[origen] = 0;
+
+            while (nodos.length) {
+                nodos.sort((a, b) => dist[a] - dist[b]);
+                let u = nodos.shift();
+                if (u === destino) break;
+                grafo[u].forEach(v => {
+                    let alt = dist[u] + 1;
+                    if (alt < dist[v]) {
+                        dist[v] = alt;
+                        prev[v] = u;
+                    }
+                });
+            }
+
+            let camino = [];
+            let u = destino;
+            while (prev[u]) {
+                camino.unshift(u);
+                u = prev[u];
+            }
+            camino.unshift(origen);
+            return camino;
+        }
+
+        // Dibujar ruta en SVG
+        function dibujarRuta(camino) {
+            let puntos = camino.map(id => {
+                let el = document.getElementById(id);
+                let bbox = el.getBBox();
+                return [bbox.x + bbox.width/2, bbox.y + bbox.height/2];
+            });
+            let d = "M" + puntos.map(p => p.join(",")).join(" L");
+            document.getElementById("ruta").setAttribute("d", d);
+        }
+
+        // Evento al hacer clic en un aula
+        document.querySelectorAll(".aula").forEach(aula => {
+            aula.addEventListener("click", () => {
+                let destino = aula.id;
+                let camino = dijkstra("entrada", destino);
+                dibujarRuta(camino);
+                alert("Ruta calculada hacia " + destino);
+            });
+        });
+    </script>
+</body>
+</html>

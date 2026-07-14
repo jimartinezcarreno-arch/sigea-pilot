@@ -1,0 +1,266 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Agenda Docente</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.21/locales/es.global.min.js"></script>
+    <style>
+        :root {
+            --primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --primary-solid: #667eea;
+            --secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --secondary-solid: #f5576c;
+            --accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --success-solid: #11998e;
+            --background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+            --card: #ffffff;
+            --border: rgba(102, 126, 234, 0.15);
+            --text: #1a1a2e;
+            --text-light: #6c757d;
+            --radius: 24px;
+            --radius-sm: 16px;
+            --shadow: 0 10px 30px rgba(102, 126, 234, 0.15);
+            --shadow-hover: 0 25px 50px rgba(102, 126, 234, 0.35);
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            margin: 20px;
+            line-height: 1.6;
+        }
+        h2 {
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+        }
+        #calendar {
+            max-width: 900px;
+            margin: 40px auto;
+            background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.95) 100%);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+        .vista-lista {
+            max-width: 900px;
+            margin: 40px auto;
+            background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.95) 100%);
+            border: 1px solid var(--border);
+            padding: 30px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+        .dia-semana {
+            background: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            margin-top: 25px;
+            border-radius: var(--radius-sm);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+        .clase-item {
+            border-left: 4px solid;
+            border-image: var(--primary) 1;
+            padding: 20px;
+            margin: 15px 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            border-radius: var(--radius-sm);
+            transition: all 0.3s ease;
+        }
+        .clase-item:hover {
+            transform: translateX(5px);
+            box-shadow: var(--shadow);
+        }
+        .btn-vista {
+            margin: 10px 5px;
+            padding: 12px 24px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+        .alert-info {
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(0, 242, 254, 0.1) 100%);
+            border: 1px solid rgba(79, 172, 254, 0.2);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+        }
+    </style>
+</head>
+<body>
+    <nav style="background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 12px 0; margin-bottom: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <span style="font-weight: 800; font-size: 1.25rem; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">SIGEA</span>
+                <div class="d-flex gap-2">
+                    <a href="/" style="color: #475569; font-weight: 600; font-size: 0.875rem; padding: 8px 16px; border-radius: 8px; text-decoration: none; transition: all 0.2s;"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+                    <a href="/dashboard-reportes/" style="color: #475569; font-weight: 600; font-size: 0.875rem; padding: 8px 16px; border-radius: 8px; text-decoration: none; transition: all 0.2s;"><i class="bi bi-bar-chart"></i> Reportes</a>
+                    <a href="/conflictos/" style="color: #475569; font-weight: 600; font-size: 0.875rem; padding: 8px 16px; border-radius: 8px; text-decoration: none; transition: all 0.2s;"><i class="bi bi-exclamation-triangle"></i> Conflictos</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">Agenda de {{ docente.nombre }}</h2>
+            
+            <div class="d-flex align-items-center gap-3">
+                <div class="input-group" style="width: 300px;">
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" class="form-control" id="buscadorDocente" placeholder="Buscar docente...">
+                </div>
+                <button class="btn btn-primary" onclick="mostrarBuscadorDocente()">
+                    <i class="bi bi-person-lines-fill"></i> Cambiar Docente
+                </button>
+            </div>
+        </div>
+        
+        <div id="selectorDocenteContainer" style="display: none;" class="mb-4">
+            <select class="form-select" id="selectorDocenteCompleto">
+                <option value="">Seleccionar docente...</option>
+                {% for doc in todos_docentes %}
+                <option value="{{ doc.id }}" {% if doc.id == docente.id %}selected{% endif %}>{{ doc.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="text-center mb-4">
+            <button class="btn btn-primary btn-vista" onclick="mostrarCalendario()">
+                <i class="bi bi-calendar"></i> Vista Calendario
+            </button>
+            <button class="btn btn-secondary btn-vista" onclick="mostrarLista()">
+                <i class="bi bi-list"></i> Vista Lista
+            </button>
+        </div>
+
+        <div id="calendar-container">
+            <div id="calendar"></div>
+        </div>
+
+        <div id="lista-container" style="display: none;">
+            <div class="vista-lista">
+                {% if clases_por_dia %}
+                    {% for dia_nombre, clases_dia in clases_por_dia.items %}
+                        <div class="dia-semana">{{ dia_nombre }}</div>
+                        {% for clase in clases_dia %}
+                            <div class="clase-item">
+                                <strong style="font-size: 1.1rem;">{{ clase.asignatura }} ({{ clase.nrc }})</strong><br>
+                                <small class="text-muted">
+                                    <i class="bi bi-clock"></i> {{ clase.hora_inicio }} - {{ clase.hora_fin }}<br>
+                                    <i class="bi bi-building"></i> {{ clase.aula.nombre }} - {{ clase.aula.edificio.nombre }}
+                                </small>
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">
+                        No hay clases programadas para este docente.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {{ eventos|json_script:"eventos-docente" }}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var eventos = JSON.parse(document.getElementById('eventos-docente').textContent);
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                locale: 'es',
+                slotMinTime: "06:00:00",
+                slotMaxTime: "22:00:00",
+                events: eventos,
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                buttonText: {
+                    today: 'Hoy',
+                    month: 'Mes',
+                    week: 'Semana',
+                    day: 'Día'
+                }
+            });
+            calendar.render();
+        });
+
+        function mostrarCalendario() {
+            document.getElementById('calendar-container').style.display = 'block';
+            document.getElementById('lista-container').style.display = 'none';
+        }
+
+        function mostrarLista() {
+            document.getElementById('calendar-container').style.display = 'none';
+            document.getElementById('lista-container').style.display = 'block';
+        }
+
+        function mostrarBuscadorDocente() {
+            const container = document.getElementById('selectorDocenteContainer');
+            container.style.display = container.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Buscador de docente
+        const buscadorDocente = document.getElementById('buscadorDocente');
+        const selectorDocenteCompleto = document.getElementById('selectorDocenteCompleto');
+        
+        if (buscadorDocente && selectorDocenteCompleto) {
+            buscadorDocente.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const options = selectorDocenteCompleto.querySelectorAll('option');
+                
+                options.forEach(option => {
+                    const text = option.textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        option.style.display = 'block';
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
+            });
+
+            selectorDocenteCompleto.addEventListener('change', function() {
+                if (this.value) {
+                    window.location.href = '/agenda-docente/' + this.value + '/';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

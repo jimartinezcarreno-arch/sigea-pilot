@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importar Datos | SIGEA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+        body { font-family: 'Outfit', sans-serif; background-color: #0b0f19; color: #f8fafc; }
+        .drop-zone--over { border-color: #3b82f6 !important; background-color: rgba(59,130,246,0.05) !important; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header class="bg-[#0f172a]/80 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                {% if institucion_activa.logo %}
+                    <img src="{{ institucion_activa.logo.url }}" alt="{{ institucion_activa.nombre }}" class="h-10 w-10 object-contain rounded-xl bg-slate-900 border border-slate-800 p-1">
+                {% else %}
+                    <div class="bg-gradient-to-tr from-indigo-500 to-violet-600 text-white p-2.5 rounded-xl shadow-lg shadow-indigo-900/30">
+                        <i class="ph ph-cloud-arrow-up text-2xl"></i>
+                    </div>
+                {% endif %}
+                <div>
+                    <h1 class="text-lg font-black tracking-tight text-white leading-none">
+                        {{ institucion_activa.nombre|default:"SIGEA - Gestión de Espacios" }}
+                    </h1>
+                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-[0.25em] mt-1">Plataforma SaaS Integrada</p>
+                </div>
+            </div>
+            <a href="{% url 'proyectos:consulta_aulas' %}" class="bg-slate-800 hover:bg-slate-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+                <i class="ph ph-arrow-left text-base"></i> Volver al panel
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-6 py-12">
+        <div class="bg-[#131a2e] border border-slate-800/80 rounded-3xl shadow-xl overflow-hidden">
+            <div class="p-8 sm:p-12">
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl font-black text-white tracking-tight mb-3">Actualizar Programación</h2>
+                    <p class="text-slate-400 font-medium">Sube el archivo Excel con los horarios para actualizar la disponibilidad de las aulas.</p>
+                </div>
+
+                {% if messages %}
+                    <div class="mb-8 space-y-2">
+                        {% for msg in messages %}
+                            <div class="p-4 rounded-2xl {% if msg.tags == 'success' %}bg-emerald-950/30 border border-emerald-500/20 text-emerald-400{% else %}bg-rose-950/30 border border-rose-500/20 text-rose-400{% endif %} flex items-center gap-3">
+                                <i class="ph {% if msg.tags == 'success' %}ph-check-circle-bold{% else %}ph-warning-circle-bold{% endif %} text-xl"></i>
+                                <span class="text-sm font-bold">{{ msg }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <form method="POST" action="{% url 'proyectos:subir_excel' %}" enctype="multipart/form-data" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    <div id="drop-zone" class="relative group border-4 border-dashed border-slate-700 rounded-3xl p-12 transition-all hover:border-indigo-500 hover:bg-slate-800/30 flex flex-col items-center justify-center cursor-pointer">
+                        <input type="file" name="excel_file" id="archivo" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".xlsx, .xls">
+                        
+                        <div class="w-20 h-20 bg-indigo-500/10 text-indigo-400 rounded-3xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform border border-indigo-500/20">
+                            <i class="ph ph-file-xls text-5xl"></i>
+                        </div>
+                        
+                        <div class="text-center">
+                            <p class="text-lg font-black text-white tracking-tight">Haz clic o arrastra el archivo</p>
+                            <p class="text-sm text-slate-400 font-medium mt-1">Soporta formatos .XLSX y .XLS</p>
+                        </div>
+
+                        <div id="file-info" class="hidden mt-6 flex items-center gap-3 px-4 py-2 bg-slate-800 rounded-full border border-indigo-500/30 shadow-lg shadow-indigo-950/20">
+                            <i class="ph ph-file-text text-indigo-400 font-bold"></i>
+                            <span id="file-name" class="text-xs font-black text-indigo-300 truncate max-w-[200px]">nombre_archivo.xlsx</span>
+                            <button type="button" onclick="resetFile()" class="text-slate-500 hover:text-rose-400 transition-colors">
+                                <i class="ph ph-x-circle text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-4">
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 px-6 rounded-2xl transition-all shadow-lg shadow-indigo-900/30 flex justify-center items-center gap-3 active:scale-[0.98]">
+                            <i class="ph ph-upload-simple-bold text-xl"></i>
+                            PROCESAR Y SUBIR ARCHIVO
+                        </button>
+                        
+                        <p class="text-[10px] text-center text-slate-500 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
+                            <i class="ph ph-info"></i> El sistema validará aulas, docentes y horarios automáticamente
+                        </p>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="bg-slate-800/30 p-6 border-t border-slate-800/50 flex justify-center gap-8">
+                <div class="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-tight">
+                    <i class="ph ph-check-circle text-emerald-400"></i> Validación de Docentes
+                </div>
+                <div class="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-tight">
+                    <i class="ph ph-check-circle text-emerald-400"></i> Mapeo de Aulas
+                </div>
+                <div class="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-tight">
+                    <i class="ph ph-check-circle text-emerald-400"></i> Prevención de Conflictos
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const input = document.getElementById('archivo');
+        const dropZone = document.getElementById('drop-zone');
+        const fileInfo = document.getElementById('file-info');
+        const fileName = document.getElementById('file-name');
+
+        input.addEventListener('change', (e) => {
+            if (input.files.length > 0) {
+                updateFileInfo(input.files[0].name);
+            }
+        });
+
+        ['dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, e => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+
+        dropZone.addEventListener('dragover', () => dropZone.classList.add('drop-zone--over'));
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-zone--over'));
+        dropZone.addEventListener('drop', (e) => {
+            dropZone.classList.remove('drop-zone--over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                input.files = files;
+                updateFileInfo(files[0].name);
+            }
+        });
+
+        function updateFileInfo(name) {
+            fileName.textContent = name;
+            fileInfo.classList.remove('hidden');
+            fileInfo.classList.add('flex');
+        }
+
+        function resetFile() {
+            input.value = '';
+            fileInfo.classList.add('hidden');
+            fileInfo.classList.remove('flex');
+        }
+    </script>
+</body>
+</html>
