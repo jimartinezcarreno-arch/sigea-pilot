@@ -132,6 +132,29 @@ class SIGEATestCase(TestCase):
         respuesta = self.client.post('/salir/', HTTP_HOST='inst1.localhost')
         self.assertRedirects(respuesta, '/acceso/')
 
+    @override_settings(REQUIRE_LOGIN=True)
+    def test_tablero_muestra_herramientas_segun_el_rol(self):
+        consulta = get_user_model().objects.create_user(username='vista-consulta', password='ClaveSegura123!')
+        PerfilUsuario.objects.create(user=consulta, institucion=self.inst1, rol='CONSULTA')
+        self.client.force_login(consulta)
+        respuesta = self.client.get('/', HTTP_HOST='inst1.localhost')
+        self.assertContains(respuesta, 'Modo consulta')
+        self.assertNotContains(respuesta, 'Importar Excel')
+        self.assertNotContains(respuesta, 'Gestión de Usuarios')
+
+        programador = get_user_model().objects.create_user(username='vista-programador', password='ClaveSegura123!')
+        PerfilUsuario.objects.create(user=programador, institucion=self.inst1, rol='PROGRAMADOR')
+        self.client.force_login(programador)
+        respuesta = self.client.get('/', HTTP_HOST='inst1.localhost')
+        self.assertContains(respuesta, 'Importar Excel')
+        self.assertNotContains(respuesta, 'Gestión de Usuarios')
+
+        admin = get_user_model().objects.create_user(username='vista-admin', password='ClaveSegura123!')
+        PerfilUsuario.objects.create(user=admin, institucion=self.inst1, rol='ADMIN')
+        self.client.force_login(admin)
+        respuesta = self.client.get('/', HTTP_HOST='inst1.localhost')
+        self.assertContains(respuesta, 'Gestión de Usuarios')
+
 
 class BootstrapPilotCommandTests(TestCase):
     @patch.dict(os.environ, {

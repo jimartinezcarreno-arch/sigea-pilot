@@ -35,6 +35,14 @@ href="{% static 'css/dashboard.css' %}">
 
 <h4>SIGEA</h4>
 
+{% if sigea_access.is_authenticated %}
+<div class="rounded-3 border bg-light p-3 mb-3">
+    <small class="d-block text-uppercase text-secondary fw-semibold" style="font-size: .65rem; letter-spacing: .06em;">Sesión activa</small>
+    <strong class="d-block text-truncate">{{ user.username }}</strong>
+    <span class="badge text-bg-primary mt-1">{{ sigea_access.role_label }}</span>
+</div>
+{% endif %}
+
 <hr>
 
 <form method="GET" id="formBusqueda">
@@ -184,6 +192,7 @@ Buscar
 
 <hr>
 
+{% if sigea_access.can_programar %}
 <h6>Importar programación</h6>
 
 <form
@@ -210,6 +219,12 @@ Importar Excel
 </button>
 
 </form>
+{% elif sigea_access.is_authenticated %}
+<div class="alert alert-light border mb-0 small" role="note">
+    <strong><i class="bi bi-eye"></i> Modo consulta</strong><br>
+    Puedes explorar la disponibilidad, agenda, conflictos y reportes. La programación está protegida.
+</div>
+{% endif %}
 
 <hr>
 
@@ -226,6 +241,12 @@ Importar Excel
 <button type="button" class="btn btn-outline-secondary w-100 mb-2 disabled" style="text-align: left; font-size: 0.85rem;" disabled title="El mapa interactivo estÃ¡ en preparaciÃ³n">
     <i class="bi bi-geo-alt-fill"></i> Mapa Interactivo <small>(prÃ³ximamente)</small>
 </button>
+
+{% if sigea_access.can_administrar %}
+<a href="{% url 'gestionar_usuarios' %}" class="btn btn-outline-dark w-100 mb-2" style="text-align: left; font-size: 0.85rem;">
+    <i class="bi bi-people-fill"></i> Gestión de Usuarios
+</a>
+{% endif %}
 
 {% if user.is_authenticated %}
 <form method="post" action="{% url 'logout' %}">
