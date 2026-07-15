@@ -63,6 +63,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'proyectos.middleware.TenantMiddleware',
     'proyectos.middleware.TenantAccessMiddleware',
+    'proyectos.role_middleware.RoleAccessMiddleware',
 ]
 
 ROOT_URLCONF = 'planimetria.urls'

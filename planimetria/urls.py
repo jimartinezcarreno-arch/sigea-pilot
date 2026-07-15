@@ -2,9 +2,11 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from proyectos.access_views import gestionar_usuarios
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('usuarios/', gestionar_usuarios, name='gestionar_usuarios'),
     path('', include('proyectos.urls')),  # Incluye todas las rutas de la app 'proyectos'
 ]
 

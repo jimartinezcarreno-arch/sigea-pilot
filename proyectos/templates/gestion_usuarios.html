@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuarios | SIGEA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background: #f7f9fc; color: #1d2939; }
+        .page-shell { max-width: 1180px; margin: 0 auto; padding: 42px 20px 64px; }
+        .hero { background: linear-gradient(135deg, #eef2ff, #f0fdf4); border: 1px solid #dbeafe; border-radius: 22px; padding: 28px; }
+        .card { border: 1px solid #e4e7ec; border-radius: 18px; box-shadow: 0 10px 26px rgba(16, 24, 40, .05); }
+        .role { font-size: .75rem; font-weight: 700; letter-spacing: .03em; }
+        .table > :not(caption) > * > * { padding: .85rem .75rem; }
+    </style>
+</head>
+<body>
+    <main class="page-shell">
+        <div class="d-flex flex-wrap justify-content-between gap-3 align-items-center mb-4">
+            <a class="btn btn-outline-secondary" href="{% url 'consulta_aulas' %}"><i class="bi bi-arrow-left"></i> Volver a SIGEA</a>
+            <span class="text-secondary small"><i class="bi bi-building"></i> {{ institucion_activa.nombre }}</span>
+        </div>
+
+        <section class="hero mb-4">
+            <p class="text-primary fw-semibold mb-1">ACCESO INSTITUCIONAL</p>
+            <h1 class="h2 fw-bold mb-2">Usuarios del piloto</h1>
+            <p class="mb-0 text-secondary">Crea cuentas individuales. Nunca compartas una cuenta administradora con participantes de la prueba.</p>
+        </section>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %}" role="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <section class="card p-4">
+                    <h2 class="h5 fw-bold">Crear usuario</h2>
+                    <p class="small text-secondary">La contrase\u00f1a temporal debe ser distinta a la del administrador.</p>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="accion" value="crear">
+                        <label class="form-label fw-semibold" for="username">Usuario</label>
+                        <input class="form-control mb-3" id="username" name="username" required autocomplete="username">
+                        <label class="form-label fw-semibold" for="email">Correo</label>
+                        <input class="form-control mb-3" id="email" name="email" type="email" autocomplete="email">
+                        <label class="form-label fw-semibold" for="rol">Rol</label>
+                        <select class="form-select mb-3" id="rol" name="rol">
+                            {% for valor, etiqueta in roles %}<option value="{{ valor }}">{{ etiqueta }}</option>{% endfor %}
+                        </select>
+                        <label class="form-label fw-semibold" for="password">Contrase\u00f1a temporal</label>
+                        <input class="form-control mb-4" id="password" name="password" type="password" required autocomplete="new-password">
+                        <button class="btn btn-primary w-100"><i class="bi bi-person-plus"></i> Crear cuenta</button>
+                    </form>
+                </section>
+            </div>
+            <div class="col-lg-8">
+                <section class="card overflow-hidden">
+                    <div class="p-4 border-bottom"><h2 class="h5 fw-bold mb-1">Cuentas registradas</h2><p class="small text-secondary mb-0">{{ perfiles|length }} usuario{{ perfiles|length|pluralize }} en esta instituci\u00f3n.</p></div>
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light"><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th class="text-end">Acci\u00f3n</th></tr></thead>
+                            <tbody>
+                                {% for perfil in perfiles %}
+                                <tr>
+                                    <td><strong>{{ perfil.user.username }}</strong><br><small class="text-secondary">{{ perfil.user.email|default:'Sin correo registrado' }}</small></td>
+                                    <td><span class="badge text-bg-primary role">{{ perfil.get_rol_display }}</span></td>
+                                    <td>{% if perfil.activo %}<span class="text-success"><i class="bi bi-check-circle-fill"></i> Activa</span>{% else %}<span class="text-secondary"><i class="bi bi-pause-circle-fill"></i> Desactivada</span>{% endif %}</td>
+                                    <td class="text-end">
+                                        <form method="post" class="d-inline">{% csrf_token %}<input type="hidden" name="accion" value="cambiar_estado"><input type="hidden" name="perfil_id" value="{{ perfil.id }}"><button class="btn btn-sm {% if perfil.activo %}btn-outline-danger{% else %}btn-outline-success{% endif %}" {% if perfil.user_id == request.user.id %}disabled title="No puedes desactivar tu propia cuenta"{% endif %}>{% if perfil.activo %}Desactivar{% else %}Activar{% endif %}</button></form>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="text-center text-secondary py-5">A\u00fan no hay cuentas institucionales.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

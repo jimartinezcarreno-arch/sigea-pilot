@@ -83,6 +83,41 @@ class SIGEATestCase(TestCase):
         respuesta = self.client.get('/', HTTP_HOST='inst1.localhost')
         self.assertEqual(respuesta.status_code, 200)
 
+    @override_settings(REQUIRE_LOGIN=True)
+    def test_roles_protegen_carga_y_gestion_de_usuarios(self):
+        consulta = get_user_model().objects.create_user(username='consulta-rol', password='ClaveSegura123!')
+        PerfilUsuario.objects.create(user=consulta, institucion=self.inst1, rol='CONSULTA')
+        self.client.force_login(consulta)
+
+        respuesta = self.client.get('/usuarios/', HTTP_HOST='inst1.localhost')
+        self.assertEqual(respuesta.status_code, 403)
+        respuesta = self.client.post('/subir-excel/', HTTP_HOST='inst1.localhost')
+        self.assertEqual(respuesta.status_code, 403)
+
+        programador = get_user_model().objects.create_user(username='programador', password='ClaveSegura123!')
+        PerfilUsuario.objects.create(user=programador, institucion=self.inst1, rol='PROGRAMADOR')
+        self.client.force_login(programador)
+        respuesta = self.client.post('/subir-excel/', HTTP_HOST='inst1.localhost')
+        self.assertEqual(respuesta.status_code, 302)
+
+    @override_settings(REQUIRE_LOGIN=True)
+    def test_administrador_puede_crear_cuenta_de_su_institucion(self):
+        admin = get_user_model().objects.create_user(username='admin-rol', password='ClaveSegura123!')
+        PerfilUsuario.objects.create(user=admin, institucion=self.inst1, rol='ADMIN')
+        self.client.force_login(admin)
+
+        respuesta = self.client.post('/usuarios/', {
+            'accion': 'crear',
+            'username': 'piloto-consulta',
+            'email': 'consulta@example.com',
+            'rol': 'CONSULTA',
+            'password': 'OtraClaveSegura123!',
+        }, HTTP_HOST='inst1.localhost')
+        self.assertRedirects(respuesta, '/usuarios/')
+        perfil = PerfilUsuario.objects.get(user__username='piloto-consulta')
+        self.assertEqual(perfil.institucion, self.inst1)
+        self.assertEqual(perfil.rol, 'CONSULTA')
+
 
 class BootstrapPilotCommandTests(TestCase):
     @patch.dict(os.environ, {
