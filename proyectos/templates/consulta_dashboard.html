@@ -227,6 +227,15 @@ Importar Excel
     <i class="bi bi-geo-alt-fill"></i> Mapa Interactivo <small>(prÃ³ximamente)</small>
 </button>
 
+{% if user.is_authenticated %}
+<form method="post" action="{% url 'logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-outline-warning w-100 mb-2" style="text-align: left; font-size: 0.85rem;">
+        <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+    </button>
+</form>
+{% endif %}
+
 </div>
 
 
