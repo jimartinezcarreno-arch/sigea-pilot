@@ -91,6 +91,11 @@ class SIGEATestCase(TestCase):
 
         respuesta = self.client.get('/usuarios/', HTTP_HOST='inst1.localhost')
         self.assertEqual(respuesta.status_code, 403)
+        self.assertContains(
+            respuesta,
+            'Solo el administrador institucional puede gestionar usuarios.',
+            status_code=403,
+        )
         respuesta = self.client.post('/subir-excel/', HTTP_HOST='inst1.localhost')
         self.assertEqual(respuesta.status_code, 403)
 
