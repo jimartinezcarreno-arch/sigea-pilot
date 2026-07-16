@@ -123,6 +123,9 @@ class SIGEATestCase(TestCase):
         self.assertEqual(perfil.institucion, self.inst1)
         self.assertEqual(perfil.rol, 'CONSULTA')
 
+        respuesta = self.client.get('/usuarios/', HTTP_HOST='inst1.localhost')
+        self.assertContains(respuesta, 'Programador académico')
+
     @override_settings(REQUIRE_LOGIN=True)
     def test_cierre_de_sesion_requiere_post_y_redirige_al_acceso(self):
         user = get_user_model().objects.create_user(username='cerrar-sesion', password='ClaveSegura123!')

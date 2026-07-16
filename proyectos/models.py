@@ -50,7 +50,7 @@ class PerfilUsuario(models.Model):
     """Vincula cada cuenta de acceso con una Ãºnica instituciÃ³n del piloto."""
     ROL_CHOICES = [
         ('ADMIN', 'Administrador institucional'),
-        ('PROGRAMADOR', 'Programador acadÃ©mico'),
+        ('PROGRAMADOR', 'Programador académico'),
         ('CONSULTA', 'Consulta'),
     ]
 

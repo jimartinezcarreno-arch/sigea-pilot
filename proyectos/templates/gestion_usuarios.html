@@ -38,7 +38,7 @@
             <div class="col-lg-4">
                 <section class="card p-4">
                     <h2 class="h5 fw-bold">Crear usuario</h2>
-                    <p class="small text-secondary">La contrase\u00f1a temporal debe ser distinta a la del administrador.</p>
+                    <p class="small text-secondary">La contraseña temporal debe ser distinta a la del administrador.</p>
                     <form method="post">
                         {% csrf_token %}
                         <input type="hidden" name="accion" value="crear">
@@ -50,7 +50,7 @@
                         <select class="form-select mb-3" id="rol" name="rol">
                             {% for valor, etiqueta in roles %}<option value="{{ valor }}">{{ etiqueta }}</option>{% endfor %}
                         </select>
-                        <label class="form-label fw-semibold" for="password">Contrase\u00f1a temporal</label>
+                        <label class="form-label fw-semibold" for="password">Contraseña temporal</label>
                         <input class="form-control mb-4" id="password" name="password" type="password" required autocomplete="new-password">
                         <button class="btn btn-primary w-100"><i class="bi bi-person-plus"></i> Crear cuenta</button>
                     </form>
@@ -58,10 +58,10 @@
             </div>
             <div class="col-lg-8">
                 <section class="card overflow-hidden">
-                    <div class="p-4 border-bottom"><h2 class="h5 fw-bold mb-1">Cuentas registradas</h2><p class="small text-secondary mb-0">{{ perfiles|length }} usuario{{ perfiles|length|pluralize }} en esta instituci\u00f3n.</p></div>
+                    <div class="p-4 border-bottom"><h2 class="h5 fw-bold mb-1">Cuentas registradas</h2><p class="small text-secondary mb-0">{{ perfiles|length }} usuario{{ perfiles|length|pluralize }} en esta institución.</p></div>
                     <div class="table-responsive">
                         <table class="table align-middle mb-0">
-                            <thead class="table-light"><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th class="text-end">Acci\u00f3n</th></tr></thead>
+                            <thead class="table-light"><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th class="text-end">Acción</th></tr></thead>
                             <tbody>
                                 {% for perfil in perfiles %}
                                 <tr>
@@ -73,7 +73,7 @@
                                     </td>
                                 </tr>
                                 {% empty %}
-                                <tr><td colspan="4" class="text-center text-secondary py-5">A\u00fan no hay cuentas institucionales.</td></tr>
+                                <tr><td colspan="4" class="text-center text-secondary py-5">Aún no hay cuentas institucionales.</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
