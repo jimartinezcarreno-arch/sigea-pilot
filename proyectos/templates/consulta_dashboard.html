@@ -219,6 +219,9 @@ Importar Excel
 </button>
 
 </form>
+<a href="{% url 'descargar_plantilla_programacion' %}" class="btn btn-link btn-sm w-100 mt-1 text-decoration-none">
+    <i class="bi bi-file-earmark-arrow-down"></i> Descargar plantilla Excel
+</a>
 {% elif sigea_access.is_authenticated %}
 <div class="alert alert-light border mb-0 small" role="note">
     <strong><i class="bi bi-eye"></i> Modo consulta</strong><br>

@@ -1,12 +1,13 @@
 import os
 from datetime import date, time
+from io import BytesIO
 from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.files.uploadedfile import SimpleUploadedFile
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 
 from .models import Aula, Clase, Docente, Edificio, ImportacionProgramacion, Institucion, ModalidadAcademica, MomentoAcademico, PerfilUsuario, PeriodoAcademico, Sede
 from .services.excel_importer import ExcelImporter
@@ -162,6 +163,22 @@ class SIGEATestCase(TestCase):
             ImportacionProgramacion.unfiltered.filter(institucion=self.inst1, tipo='RESTAURACION').count(),
             1,
         )
+
+    @override_settings(REQUIRE_LOGIN=True)
+    def test_programador_puede_descargar_plantilla_de_importacion(self):
+        programador = get_user_model().objects.create_user(username='plantilla', password='ClaveSegura123!')
+        PerfilUsuario.objects.create(user=programador, institucion=self.inst1, rol='PROGRAMADOR')
+        self.client.force_login(programador)
+
+        respuesta = self.client.get('/plantilla-programacion.xlsx', HTTP_HOST='inst1.localhost')
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(
+            respuesta['Content-Type'],
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        libro = load_workbook(BytesIO(respuesta.content))
+        self.assertEqual(libro['Programación']['A1'].value, 'PERIODO')
+        self.assertEqual(libro['Programación']['P1'].value, 'D')
 
     @override_settings(REQUIRE_LOGIN=True)
     def test_tablero_muestra_herramientas_segun_el_rol(self):
