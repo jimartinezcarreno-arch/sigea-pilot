@@ -8,8 +8,9 @@ from django.core.management import call_command
 from django.core.files.uploadedfile import SimpleUploadedFile
 from openpyxl import Workbook
 
-from .models import Aula, Clase, Docente, Edificio, Institucion, ModalidadAcademica, MomentoAcademico, PerfilUsuario, PeriodoAcademico, Sede
+from .models import Aula, Clase, Docente, Edificio, ImportacionProgramacion, Institucion, ModalidadAcademica, MomentoAcademico, PerfilUsuario, PeriodoAcademico, Sede
 from .services.excel_importer import ExcelImporter
+from .services.programacion_backup import capturar_programacion
 from .tenant_utils import set_current_institucion
 
 
@@ -136,6 +137,33 @@ class SIGEATestCase(TestCase):
         self.assertRedirects(respuesta, '/acceso/')
 
     @override_settings(REQUIRE_LOGIN=True)
+    def test_administrador_puede_restaurar_programacion_previa(self):
+        respaldo = capturar_programacion(self.inst1)
+        importacion = ImportacionProgramacion.unfiltered.create(
+            institucion=self.inst1,
+            archivo_nombre='programacion-anterior.xlsx',
+            total_clases=1,
+            respaldo_anterior=respaldo,
+        )
+        self.clase.nrc = 'VERSION-ACTUAL'
+        self.clase.save(update_fields=['nrc'])
+
+        admin = get_user_model().objects.create_user(username='admin-restaura', password='ClaveSegura123!')
+        PerfilUsuario.objects.create(user=admin, institucion=self.inst1, rol='ADMIN')
+        self.client.force_login(admin)
+
+        respuesta = self.client.post(
+            f'/importaciones/{importacion.id}/restaurar/',
+            HTTP_HOST='inst1.localhost',
+        )
+        self.assertRedirects(respuesta, '/importaciones/')
+        self.assertEqual(Clase.unfiltered.get(institucion=self.inst1).nrc, 'MAT-1')
+        self.assertEqual(
+            ImportacionProgramacion.unfiltered.filter(institucion=self.inst1, tipo='RESTAURACION').count(),
+            1,
+        )
+
+    @override_settings(REQUIRE_LOGIN=True)
     def test_tablero_muestra_herramientas_segun_el_rol(self):
         consulta = get_user_model().objects.create_user(username='vista-consulta', password='ClaveSegura123!')
         PerfilUsuario.objects.create(user=consulta, institucion=self.inst1, rol='CONSULTA')
@@ -185,7 +213,7 @@ class ExcelImporterTests(TestCase):
             hora_inicio_jornada=time(6, 0), hora_fin_jornada=time(22, 0),
         )
 
-    def crear_archivo(self, hora_inicio='0800'):
+    def crear_archivo(self, hora_inicio='0800', nrc='NRC-1'):
         libro = Workbook()
         hoja = libro.active
         hoja.append([
@@ -193,7 +221,7 @@ class ExcelImporterTests(TestCase):
             'SALON', 'HI', 'HF', 'L', 'M', 'I', 'J', 'V', 'S', 'D',
         ])
         hoja.append([
-            '202610', 'NRC-1', 'Matematicas', 'Ana Perez', 'Sede piloto',
+            '202610', nrc, 'Matematicas', 'Ana Perez', 'Sede piloto',
             'Edificio A', 'A-101', hora_inicio, '1000', 'X', '', '', '', '', '', '',
         ])
         from io import BytesIO
@@ -211,6 +239,15 @@ class ExcelImporterTests(TestCase):
         self.assertEqual(resultado['total'], 1)
         aula = Aula.unfiltered.get(institucion=self.institucion, nombre='A-101')
         self.assertEqual(aula.capacidad, 30)
+        primera_importacion = ImportacionProgramacion.unfiltered.get(institucion=self.institucion)
+        self.assertEqual(primera_importacion.respaldo_anterior, [])
+
+        resultado_reemplazo = ExcelImporter(
+            self.crear_archivo(nrc='NRC-2'), self.institucion
+        ).importar()
+        self.assertEqual(resultado_reemplazo['total'], 1)
+        ultima_importacion = ImportacionProgramacion.unfiltered.latest('fecha_creacion')
+        self.assertEqual(ultima_importacion.respaldo_anterior[0]['nrc'], 'NRC-1')
 
         resultado_invalido = ExcelImporter(
             self.crear_archivo(hora_inicio='hora-invalida'), self.institucion

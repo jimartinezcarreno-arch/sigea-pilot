@@ -197,7 +197,7 @@ Buscar
 
 <form
 method="POST"
-action="{% url 'subir_excel' %}"
+action="{% url 'subir_programacion_segura' %}"
 enctype="multipart/form-data">
 
 {% csrf_token %}
@@ -245,6 +245,9 @@ Importar Excel
 {% if sigea_access.can_administrar %}
 <a href="{% url 'gestionar_usuarios' %}" class="btn btn-outline-dark w-100 mb-2" style="text-align: left; font-size: 0.85rem;">
     <i class="bi bi-people-fill"></i> Gestión de Usuarios
+</a>
+<a href="{% url 'historial_importaciones' %}" class="btn btn-outline-secondary w-100 mb-2" style="text-align: left; font-size: 0.85rem;">
+    <i class="bi bi-clock-history"></i> Historial de Importaciones
 </a>
 {% endif %}
 

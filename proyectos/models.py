@@ -182,3 +182,26 @@ class Clase(TenantModel):
 
     def __str__(self):
         return f"{self.asignatura} ({self.nrc}) - {self.aula.nombre}"
+
+
+class ImportacionProgramacion(TenantModel):
+    """Audita una carga exitosa y conserva el estado anterior de la programación."""
+    TIPO_CHOICES = [
+        ('IMPORTACION', 'Importación de Excel'),
+        ('RESTAURACION', 'Restauración de historial'),
+    ]
+
+    archivo_nombre = models.CharField(max_length=255)
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='IMPORTACION')
+    creado_por = models.ForeignKey(
+        'auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='importaciones_sigea'
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    total_clases = models.PositiveIntegerField(default=0)
+    respaldo_anterior = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        ordering = ['-fecha_creacion']
+
+    def __str__(self):
+        return f"{self.archivo_nombre} - {self.fecha_creacion:%Y-%m-%d %H:%M}"

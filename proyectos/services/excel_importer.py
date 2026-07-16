@@ -14,9 +14,11 @@ from proyectos.models import (
     Aula,
     Docente,
     Clase,
+    ImportacionProgramacion,
 )
 
 from .mappers import ExcelMapper
+from .programacion_backup import capturar_programacion
 from .validators import ExcelValidator
 
 logger = logging.getLogger(__name__)
@@ -60,10 +62,11 @@ class ExcelImporter:
         "domingo": 7,
     }
 
-    def __init__(self, archivo, institucion):
+    def __init__(self, archivo, institucion, usuario=None):
 
         self.archivo = archivo
         self.institucion = institucion
+        self.usuario = usuario
 
         self.errores = []
         self.total = 0
@@ -469,9 +472,18 @@ class ExcelImporter:
 
         # Solo se reemplaza la programaci\u00f3n vigente una vez el archivo pas\u00f3
         # todas las validaciones necesarias.
+        respaldo_anterior = capturar_programacion(self.institucion)
         Clase.unfiltered.filter(institucion=self.institucion).delete()
         Clase.unfiltered.bulk_create(clases_por_crear)
         total = len(clases_por_crear)
+
+        ImportacionProgramacion.unfiltered.create(
+            institucion=self.institucion,
+            archivo_nombre=getattr(self.archivo, 'name', 'programacion.xlsx'),
+            creado_por=self.usuario if getattr(self.usuario, 'is_authenticated', False) else None,
+            total_clases=total,
+            respaldo_anterior=respaldo_anterior,
+        )
 
         logger.info(f"Clases creadas: {total}")
         logger.info("Errores: 0")
