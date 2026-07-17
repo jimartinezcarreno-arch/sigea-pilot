@@ -397,16 +397,11 @@ class ExcelImporter:
                     fila[indices["hora_fin"]]
                 )
             except (TypeError, ValueError):
-                self.errores.append(
-                    f"NRC {fila[indices['nrc']] or ''}: horas inv\u00e1lidas. "
-                    "Usa formato HHMM, por ejemplo 0830."
-                )
+                logger.warning(f"Fila omitida: NRC {fila[indices['nrc']] or ''} - horas inválidas. Usa formato HHMM, por ejemplo 0830.")
                 continue
 
             if not hora_inicio or not hora_fin or hora_inicio >= hora_fin:
-                self.errores.append(
-                    f"NRC {fila[indices['nrc']] or ''}: el rango de horas es inv\u00e1lido."
-                )
+                logger.warning(f"Fila omitida: NRC {fila[indices['nrc']] or ''} - rango de horas inválido ({hora_inicio}-{hora_fin}).")
                 continue
 
             asignatura = str(
@@ -453,28 +448,18 @@ class ExcelImporter:
                         f"NRC {nrc}: {str(e)}"
                     )
 
-
+        # Ya no cancelamos toda la importación por errores individuales
+        # Las filas con errores se omiten y se continúa con las válidas
         if self.errores:
-            logger.warning(f"Importación cancelada. Errores: {self.errores[:10]}")
-            logger.warning(f"Total filas procesadas: {len(clases_por_crear) if clases_por_crear else 0}")
-            transaction.set_rollback(True)
-            self.sedes_creadas = []
-            self.edificios_creados = []
-            self.aulas_creadas = []
-            return {
-                "total": 0,
-                "errores": self.errores,
-                "sedes_creadas": self.sedes_creadas,
-                "edificios_creados": self.edificios_creados,
-                "aulas_creadas": self.aulas_creadas,
-            }
+            logger.warning(f"Filas omitidas por errores: {len(self.errores)}")
+            logger.warning(f"Primeros errores: {self.errores[:5]}")
 
         if not clases_por_crear:
             logger.warning("No se encontraron clases válidas para importar")
             transaction.set_rollback(True)
             return {
                 "total": 0,
-                "errores": ["El archivo no contiene clases válidas para importar."],
+                "errores": self.errores + ["El archivo no contiene clases válidas para importar."],
                 "sedes_creadas": self.sedes_creadas,
                 "edificios_creados": self.edificios_creados,
                 "aulas_creadas": self.aulas_creadas,
@@ -501,7 +486,7 @@ class ExcelImporter:
         logger.info(f"  - Sedes creadas: {len(self.sedes_creadas)}")
         logger.info(f"  - Edificios creados: {len(self.edificios_creados)}")
         logger.info(f"  - Aulas creadas: {len(self.aulas_creadas)}")
-        logger.info("Errores: 0")
+        logger.info(f"  - Filas omitidas: {len(self.errores)}")
 
         return {
 
