@@ -19,6 +19,16 @@ from .models import (
     ModalidadAcademica
 )
 
+
+@login_required
+def dashboard_modulos(request):
+    """Página de selección de módulos después del login"""
+    institucion = get_current_institucion()
+    context = {
+        'institucion': institucion,
+    }
+    return render(request, 'dashboard_modulos.html', context)
+
 # -------------------------------
 # CONSULTA DE AULAS DISPONIBLES
 # -------------------------------

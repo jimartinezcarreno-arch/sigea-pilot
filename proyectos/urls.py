@@ -13,6 +13,12 @@ urlpatterns = [
 
     path(
         "",
+        views.dashboard_modulos,
+        name="dashboard_modulos"
+    ),
+
+    path(
+        "consultar-aulas/",
         views.aulas_disponibles,
         name="consulta_aulas"
     ),

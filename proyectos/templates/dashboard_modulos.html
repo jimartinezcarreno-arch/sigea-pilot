@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}SIGEA - Selección de Módulos{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center mb-5">
+                <h1 class="display-4 fw-bold text-primary mb-3">Bienvenido a SIGEA</h1>
+                <p class="lead text-muted">Sistema Inteligente de Gestión de Espacios Académicos</p>
+                {% if institucion %}
+                <p class="text-secondary">{{ institucion.nombre }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <h2 class="text-center mb-4">¿Qué deseas hacer hoy?</h2>
+        </div>
+    </div>
+
+    <div class="row justify-content-center g-4">
+        <!-- Consultar Aulas -->
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-chalkboard-teacher fa-4x text-primary"></i>
+                    </div>
+                    <h3 class="card-title h4 mb-3">Consultar Aulas</h3>
+                    <p class="card-text text-muted">Consulta la disponibilidad de aulas en tiempo real, filtra por sede, edificio y horario.</p>
+                    <a href="{% url 'consulta_aulas' %}" class="btn btn-primary btn-lg w-100 mt-3">
+                        <i class="fas fa-search me-2"></i>Consultar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Horarios de Oficina -->
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-user-clock fa-4x text-success"></i>
+                    </div>
+                    <h3 class="card-title h4 mb-3">Horarios de Oficina</h3>
+                    <p class="card-text text-muted">Consulta los horarios de atención de docentes y personal administrativo.</p>
+                    <button class="btn btn-success btn-lg w-100 mt-3" disabled>
+                        <i class="fas fa-clock me-2"></i>Próximamente
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cafetería -->
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-utensils fa-4x text-warning"></i>
+                    </div>
+                    <h3 class="card-title h4 mb-3">Cafetería</h3>
+                    <p class="card-text text-muted">Consulta horarios de servicio, capacidad y disponibilidad de espacios.</p>
+                    <button class="btn btn-warning btn-lg w-100 mt-3" disabled>
+                        <i class="fas fa-coffee me-2"></i>Próximamente
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Otros Espacios -->
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-building fa-4x text-info"></i>
+                    </div>
+                    <h3 class="card-title h4 mb-3">Otros Espacios</h3>
+                    <p class="card-text text-muted">Consulta canchas deportivas, auditorios, bibliotecas y más.</p>
+                    <button class="btn btn-info btn-lg w-100 mt-3" disabled>
+                        <i class="fas fa-door-open me-2"></i>Próximamente
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12 text-center">
+            <div class="alert alert-info d-inline-block">
+                <i class="fas fa-info-circle me-2"></i>
+                Más módulos coming soon: Mapa Interactivo, Sistema de Citas, Reservas
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-shadow {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.transition-all {
+    transition: all 0.3s ease;
+}
+
+.card {
+    cursor: pointer;
+}
+
+.btn:disabled {
+    cursor: not-allowed;
+}
+</style>
+{% endblock %}
