@@ -93,6 +93,7 @@ class ExcelImporter:
     def importar(self):
 
         logger.info("SIGEA IMPORTADOR: Inicio de importación")
+        logger.info(f"Institución: {self.institucion.nombre} (ID: {self.institucion.id})")
 
         workbook = load_workbook(
             self.archivo,
@@ -100,6 +101,8 @@ class ExcelImporter:
         )
 
         hoja = workbook.active
+        logger.info(f"Hoja activa: {hoja.title}")
+        logger.info(f"Total filas en hoja: {hoja.max_row}")
 
         cabeceras = [
 
@@ -111,9 +114,14 @@ class ExcelImporter:
 
         ]
 
+        logger.info(f"Cabeceras detectadas: {cabeceras}")
+
         indices, faltantes = ExcelMapper.obtener_indices(
             cabeceras
         )
+
+        logger.info(f"Índices mapeados: {indices}")
+        logger.info(f"Columnas faltantes: {faltantes}")
 
         errores = ExcelValidator.validar(
             indices
@@ -258,6 +266,7 @@ class ExcelImporter:
                 )
 
                 self.sedes_creadas.append(nombre_sede)
+                logger.info(f"Sede creada: {nombre_sede}")
 
             # -----------------------------
             # EDIFICIO
@@ -420,29 +429,23 @@ class ExcelImporter:
 
                 try:
 
-                    clases_por_crear.append(Clase(
-
+                    clase = Clase(
                         institucion=self.institucion,
-
                         docente=docente,
-
                         aula=aula,
-
                         periodo=periodo,
-
                         momento=momento,
-
                         asignatura=asignatura,
-
                         nrc=nrc,
-
                         dia_semana=numero_dia,
-
                         hora_inicio=hora_inicio,
-
                         hora_fin=hora_fin,
+                    )
+                    clases_por_crear.append(clase)
 
-                    ))
+                    # Log first few classes for debugging
+                    if len(clases_por_crear) <= 5:
+                        logger.info(f"Clase a crear: {asignatura} - {nombre_docente} - {aula.nombre} - {nombre_dia} {hora_inicio}-{hora_fin}")
 
                 except (ValidationError, Exception) as e:
 
@@ -452,7 +455,12 @@ class ExcelImporter:
 
 
         if self.errores:
-            logger.warning(f"Importaci\u00f3n cancelada. Errores: {self.errores[:10]}")
+            logger.warning(f"Importación cancelada. Errores: {self.errores[:10]}")
+            logger.warning(f"Total filas procesadas: {len(clases_por_crear) if clases_por_crear else 0}")
+            transaction.set_rollback(True)
+            self.sedes_creadas = []
+            self.edificios_creados = []
+            self.aulas_creadas = []
             return {
                 "total": 0,
                 "errores": self.errores,
@@ -462,16 +470,19 @@ class ExcelImporter:
             }
 
         if not clases_por_crear:
+            logger.warning("No se encontraron clases válidas para importar")
+            transaction.set_rollback(True)
             return {
                 "total": 0,
-                "errores": ["El archivo no contiene clases v\u00e1lidas para importar."],
+                "errores": ["El archivo no contiene clases válidas para importar."],
                 "sedes_creadas": self.sedes_creadas,
                 "edificios_creados": self.edificios_creados,
                 "aulas_creadas": self.aulas_creadas,
             }
 
-        # Solo se reemplaza la programaci\u00f3n vigente una vez el archivo pas\u00f3
+        # Solo se reemplaza la programación vigente una vez el archivo pasó
         # todas las validaciones necesarias.
+        logger.info(f"Preparando para crear {len(clases_por_crear)} clases")
         respaldo_anterior = capturar_programacion(self.institucion)
         Clase.unfiltered.filter(institucion=self.institucion).delete()
         Clase.unfiltered.bulk_create(clases_por_crear)
@@ -485,7 +496,11 @@ class ExcelImporter:
             respaldo_anterior=respaldo_anterior,
         )
 
-        logger.info(f"Clases creadas: {total}")
+        logger.info(f"Importación exitosa:")
+        logger.info(f"  - Clases creadas: {total}")
+        logger.info(f"  - Sedes creadas: {len(self.sedes_creadas)}")
+        logger.info(f"  - Edificios creados: {len(self.edificios_creados)}")
+        logger.info(f"  - Aulas creadas: {len(self.aulas_creadas)}")
         logger.info("Errores: 0")
 
         return {
