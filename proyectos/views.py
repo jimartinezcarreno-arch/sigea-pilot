@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponseNotAllowed
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from datetime import datetime, date, time
 import json
 from .tenant_utils import get_current_institucion
