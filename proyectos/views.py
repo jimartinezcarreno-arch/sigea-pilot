@@ -123,6 +123,14 @@ def aulas_disponibles(request):
     libres_count = 0
     ocupadas_count = 0
 
+    # Logging para diagnóstico
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"=== DIAGNÓSTICO AULAS DISPONIBLES ===")
+    logger.info(f"Total aulas en query: {aulas_query.count()}")
+    logger.info(f"Hora consulta: {hora_consulta}")
+    logger.info(f"Parámetros: sede_id={sede_id}, edificio_id={edificio_id}, aula_id={aula_id}, docente_id={docente_id}")
+
     for aula in aulas_query:
 
         clases_aula = Clase.objects.filter(
@@ -136,6 +144,13 @@ def aulas_disponibles(request):
             )
 
         clases_aula = clases_aula.order_by("dia_semana", "hora_inicio")
+
+        # Log primeras 3 aulas y sus clases
+        if len(resultado) < 3:
+            logger.info(f"Aula: {aula.nombre} (ID: {aula.id}) - Total clases: {clases_aula.count()}")
+            if clases_aula.count() > 0:
+                for c in clases_aula[:3]:
+                    logger.info(f"  Clase: {c.asignatura} - Día: {c.dia_semana} - {c.hora_inicio}-{c.hora_fin}")
 
         clase_en_curso = None
 
@@ -177,15 +192,17 @@ def aulas_disponibles(request):
 
         if estado == "DISPONIBLE":
             libres_count += 1
-        else:
+
+        # Log estado de primeras 3 aulas
+        if len(resultado) < 3:
+            logger.info(f"  Estado: {estado} - Clase en curso: {clase_en_curso.asignatura if clase_en_curso else 'Ninguna'}")
+
+        if estado == "OCUPADA":
             ocupadas_count += 1
 
         resultado.append({
-
             "aula": aula,
-
             "estado": estado,
-
             "materia_actual": (
                 clase_en_curso.asignatura
                 if clase_en_curso
@@ -222,6 +239,15 @@ def aulas_disponibles(request):
 
     aulas_libres = libres_count
     aulas_ocupadas = ocupadas_count
+
+    # Logging final para diagnóstico
+    logger.info(f"=== RESUMEN DIAGNÓSTICO ===")
+    logger.info(f"Total aulas procesadas: {total_aulas}")
+    logger.info(f"Total clases filtradas: {total_clases}")
+    logger.info(f"Aulas libres: {aulas_libres}")
+    logger.info(f"Aulas ocupadas: {aulas_ocupadas}")
+    logger.info(f"Total docentes: {total_docentes}")
+    logger.info(f"Resultado length: {len(resultado)}")
 
     context = {
 
