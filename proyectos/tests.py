@@ -51,8 +51,7 @@ class SIGEATestCase(TestCase):
     def test_unknown_tenant_cannot_read_tenant_data(self):
         self.assertEqual(Aula.objects.count(), 0)
         respuesta = self.client.get("/", HTTP_HOST="unknown.localhost")
-        self.assertEqual(respuesta.status_code, 200)
-        self.assertNotContains(respuesta, "A-101")
+        self.assertRedirects(respuesta, "/acceso/?next=/")
 
     def test_agenda_contains_recurring_calendar_event(self):
         respuesta = self.client.get(f"/agenda-docente/{self.docente.id}/", HTTP_HOST="inst1.localhost")

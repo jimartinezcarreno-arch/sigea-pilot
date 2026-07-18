@@ -2,7 +2,10 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponseNotAllowed
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Prefetch
 from datetime import datetime, date, time
+from collections import defaultdict
+import logging
 import json
 from .tenant_utils import get_current_institucion
 from .services.excel_importer import ExcelImporter
@@ -123,142 +126,90 @@ def aulas_disponibles(request):
             clases__docente_id=docente_id
         ).distinct()
 
-    # Optimize N+1 query problem with prefetch_related
-    aulas_query = aulas_query.prefetch_related('clases__docente')
+    # Se cargan las aulas y su programación en dos consultas, sin una consulta
+    # adicional por cada tarjeta. Así el tiempo de respuesta no crece con cada
+    # aula importada.
+    aulas = list(
+        aulas_query.select_related("edificio", "edificio__sede").prefetch_related(
+            Prefetch(
+                "clases",
+                queryset=Clase.objects.select_related("docente").order_by("dia_semana", "hora_inicio"),
+                to_attr="programacion_cargada",
+            )
+        )
+    )
 
     resultado = []
-
-    hora_actual = datetime.now().time()
     dia_actual = datetime.now().weekday() + 1  # Django usa 1=Lunes, 7=Domingo
-
     libres_count = 0
     ocupadas_count = 0
 
-    # Logging para diagnóstico
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.info(f"=== DIAGNÓSTICO AULAS DISPONIBLES ===")
-    logger.info(f"Total aulas en query: {aulas_query.count()}")
-    logger.info(f"Hora consulta: {hora_consulta}")
-    logger.info(f"Parámetros: sede_id={sede_id}, edificio_id={edificio_id}, aula_id={aula_id}, docente_id={docente_id}")
+    for aula in aulas:
+        clases_aula = aula.programacion_cargada
+        if docente_id:
+            clases_aula = [clase for clase in clases_aula if str(clase.docente_id) == docente_id]
 
-    for aula in aulas_query:
-
-        clases_aula = Clase.objects.filter(
-            aula=aula
+        clases_del_dia = [clase for clase in clases_aula if clase.dia_semana == dia_actual]
+        clase_en_curso = next(
+            (
+                clase
+                for clase in clases_del_dia
+                if clase.hora_inicio <= hora_consulta < clase.hora_fin
+            ),
+            None,
+        )
+        proxima_clase = next(
+            (clase for clase in clases_del_dia if clase.hora_inicio > hora_consulta),
+            None,
         )
 
-        if docente_id:
-
-            clases_aula = clases_aula.filter(
-                docente_id=docente_id
+        tiempo_libre_minutos = None
+        if clase_en_curso:
+            tiempo_libre_minutos = int(
+                (
+                    datetime.combine(date.today(), clase_en_curso.hora_fin)
+                    - datetime.combine(date.today(), hora_consulta)
+                ).total_seconds()
+                / 60
+            )
+        elif proxima_clase:
+            tiempo_libre_minutos = int(
+                (
+                    datetime.combine(date.today(), proxima_clase.hora_inicio)
+                    - datetime.combine(date.today(), hora_consulta)
+                ).total_seconds()
+                / 60
             )
 
-        clases_aula = clases_aula.order_by("dia_semana", "hora_inicio")
-
-        # Log primeras 3 aulas y sus clases
-        if len(resultado) < 3:
-            logger.info(f"Aula: {aula.nombre} (ID: {aula.id}) - Total clases: {clases_aula.count()}")
-            if clases_aula.count() > 0:
-                for c in clases_aula[:3]:
-                    logger.info(f"  Clase: {c.asignatura} - Día: {c.dia_semana} - {c.hora_inicio}-{c.hora_fin}")
-
-        clase_en_curso = None
-
-        for c in clases_aula:
-
-            if c.hora_inicio <= hora_consulta <= c.hora_fin:
-
-                clase_en_curso = c
-
-                break
-
-        # Calcular próxima clase y tiempo libre
-        proxima_clase = None
-        tiempo_libre_minutos = None
-        
-        if clase_en_curso:
-            # Si está ocupada, calcular tiempo hasta que termine
-            fin_clase = datetime.combine(datetime.today(), clase_en_curso.hora_fin)
-            ahora = datetime.combine(datetime.today(), hora_actual)
-            tiempo_restante = (fin_clase - ahora).total_seconds() / 60
-            if tiempo_restante > 0:
-                tiempo_libre_minutos = int(tiempo_restante)
-        else:
-            # Si está libre, buscar próxima clase hoy
-            clases_hoy = clases_aula.filter(dia_semana=dia_actual).filter(hora_inicio__gt=hora_actual).order_by('hora_inicio').first()
-            if clases_hoy:
-                proxima_clase = clases_hoy
-                inicio_proxima = datetime.combine(datetime.today(), clases_hoy.hora_inicio)
-                ahora = datetime.combine(datetime.today(), hora_actual)
-                tiempo_libre = (inicio_proxima - ahora).total_seconds() / 60
-                if tiempo_libre > 0:
-                    tiempo_libre_minutos = int(tiempo_libre)
-
-        estado = (
-            "OCUPADA"
-            if clase_en_curso
-            else "DISPONIBLE"
+        estado = "OCUPADA" if clase_en_curso else "DISPONIBLE"
+        libres_count += estado == "DISPONIBLE"
+        ocupadas_count += estado == "OCUPADA"
+        resultado.append(
+            {
+                "aula": aula,
+                "estado": estado,
+                "materia_actual": clase_en_curso.asignatura if clase_en_curso else None,
+                "docente_actual": clase_en_curso.docente.nombre if clase_en_curso else None,
+                "horarios_ocupados": clases_aula,
+                "proxima_clase": proxima_clase,
+                "tiempo_libre_minutos": tiempo_libre_minutos,
+            }
         )
 
-        if estado == "DISPONIBLE":
-            libres_count += 1
-
-        # Log estado de primeras 3 aulas
-        if len(resultado) < 3:
-            logger.info(f"  Estado: {estado} - Clase en curso: {clase_en_curso.asignatura if clase_en_curso else 'Ninguna'}")
-
-        if estado == "OCUPADA":
-            ocupadas_count += 1
-
-        resultado.append({
-            "aula": aula,
-            "estado": estado,
-            "materia_actual": (
-                clase_en_curso.asignatura
-                if clase_en_curso
-                else None
-            ),
-
-            "docente_actual": (
-                clase_en_curso.docente.nombre
-                if clase_en_curso
-                else None
-            ),
-
-            "horarios_ocupados": clases_aula,
-
-            "proxima_clase": proxima_clase,
-
-            "tiempo_libre_minutos": tiempo_libre_minutos,
-
-        })
-
-    # -------------------------------
-    # ESTADÍSTICAS FILTRADAS
-    # -------------------------------
-
-    total_aulas = aulas_query.count()
-
+    total_aulas = len(aulas)
     total_docentes = Docente.objects.count()
-
-    # Total de clases asociadas a las aulas y docente actualmente filtrados
-    clases_filtradas = Clase.objects.filter(aula__in=aulas_query)
-    if docente_id:
-        clases_filtradas = clases_filtradas.filter(docente_id=docente_id)
-    total_clases = clases_filtradas.count()
-
+    total_clases = sum(len(item["horarios_ocupados"]) for item in resultado)
     aulas_libres = libres_count
     aulas_ocupadas = ocupadas_count
-
-    # Logging final para diagnóstico
-    logger.info(f"=== RESUMEN DIAGNÓSTICO ===")
-    logger.info(f"Total aulas procesadas: {total_aulas}")
-    logger.info(f"Total clases filtradas: {total_clases}")
-    logger.info(f"Aulas libres: {aulas_libres}")
-    logger.info(f"Aulas ocupadas: {aulas_ocupadas}")
-    logger.info(f"Total docentes: {total_docentes}")
-    logger.info(f"Resultado length: {len(resultado)}")
+    logging.getLogger(__name__).debug(
+        "Consulta de aulas: %s aulas, %s clases, sede=%s, edificio=%s, aula=%s, docente=%s",
+        total_aulas,
+        total_clases,
+        sede_id,
+        edificio_id,
+        aula_id,
+        docente_id,
+    )
 
     context = {
 
@@ -282,7 +233,7 @@ def aulas_disponibles(request):
 
         "hora": hora_buscada_str,
 
-        "institucion_activa": Institucion.objects.first(),
+        "institucion_activa": get_current_institucion(),
 
         "total_aulas": total_aulas,
 
@@ -567,44 +518,39 @@ def agenda_docente(request, docente_id):
 # DASHBOARD DE REPORTES
 # -------------------------------
 def dashboard_reportes(request):
-    from django.db.models import Count, Avg, Q
-    from datetime import datetime, time as time_class
-    
-    institucion = Institucion.objects.first()
+    institucion = get_current_institucion()
+    aulas = list(Aula.objects.select_related("edificio").order_by("nombre"))
+    docentes = list(Docente.objects.order_by("nombre"))
+    clases = list(Clase.objects.select_related("aula", "docente"))
 
-    # Estadísticas de ocupación de aulas
-    aulas = Aula.objects.all()
+    # Los agregados se calculan a partir de una única consulta de clases. Antes
+    # se ejecutaban dos consultas por aula y dos por docente.
+    clases_por_aula = defaultdict(list)
+    clases_por_docente = defaultdict(list)
+    for clase in clases:
+        clases_por_aula[clase.aula_id].append(clase)
+        clases_por_docente[clase.docente_id].append(clase)
+
+    def duracion_horas(clase):
+        inicio = datetime.combine(date.today(), clase.hora_inicio)
+        fin = datetime.combine(date.today(), clase.hora_fin)
+        return (fin - inicio).total_seconds() / 3600
+
     ocupacion_labels = []
     ocupacion_data = []
-    
     for aula in aulas:
-        total_clases = Clase.objects.filter(aula=aula).count()
-        # Calcular porcentaje de ocupación basado en horas disponibles
-        # Asumiendo 8 horas diarias de uso potencial (8am-4pm) x 5 días = 40 horas semanales
-        horas_usadas = 0
-        clases_aula = Clase.objects.filter(aula=aula)
-        for clase in clases_aula:
-            inicio = datetime.combine(datetime.today(), clase.hora_inicio)
-            fin = datetime.combine(datetime.today(), clase.hora_fin)
-            horas_usadas += (fin - inicio).total_seconds() / 3600
-        
-        porcentaje = min(100, (horas_usadas / 40) * 100) if total_clases > 0 else 0
+        horas_usadas = sum(duracion_horas(clase) for clase in clases_por_aula[aula.id])
+        porcentaje = min(100, (horas_usadas / 40) * 100)
         ocupacion_labels.append(aula.nombre)
         ocupacion_data.append(round(porcentaje, 1))
 
-    # Ranking de docentes por horas de clase
-    docentes = Docente.objects.all()
     docentes_data = []
-    
-    for d in docentes:
-        horas = sum([
-            (datetime.combine(datetime.today(), c.hora_fin) - datetime.combine(datetime.today(), c.hora_inicio)).total_seconds() / 3600
-            for c in Clase.objects.filter(docente=d)
-        ])
+    for docente in docentes:
+        clases_docente = clases_por_docente[docente.id]
         docentes_data.append({
-            'nombre': d.nombre,
-            'horas': round(horas, 1),
-            'clases': Clase.objects.filter(docente=d).count()
+            'nombre': docente.nombre,
+            'horas': round(sum(duracion_horas(clase) for clase in clases_docente), 1),
+            'clases': len(clases_docente),
         })
     
     # El grÃ¡fico conserva un resumen legible; la tabla muestra todos los docentes.
@@ -616,11 +562,10 @@ def dashboard_reportes(request):
     # Ranking de aulas por utilización
     espacios_data = []
     for aula in aulas:
-        total_clases = Clase.objects.filter(aula=aula).count()
         espacios_data.append({
             'nombre': aula.nombre,
             'edificio': aula.edificio.nombre,
-            'clases': total_clases,
+            'clases': len(clases_por_aula[aula.id]),
             'capacidad': aula.capacidad
         })
     
@@ -630,9 +575,9 @@ def dashboard_reportes(request):
     espacios_clases = [e['clases'] for e in espacios_data]
 
     # Estadísticas generales
-    total_aulas = Aula.objects.count()
-    total_docentes = Docente.objects.count()
-    total_clases = Clase.objects.count()
+    total_aulas = len(aulas)
+    total_docentes = len(docentes)
+    total_clases = len(clases)
     
     # Calcular ocupación promedio del sistema
     if total_aulas > 0:

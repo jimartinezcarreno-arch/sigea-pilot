@@ -183,6 +183,18 @@ class Clase(TenantModel):
     def __str__(self):
         return f"{self.asignatura} ({self.nrc}) - {self.aula.nombre}"
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=['institucion', 'aula', 'dia_semana', 'hora_inicio', 'hora_fin'],
+                name='clase_ins_aula_horario_idx',
+            ),
+            models.Index(
+                fields=['institucion', 'docente', 'dia_semana'],
+                name='clase_ins_docente_dia_idx',
+            ),
+        ]
+
 
 class ImportacionProgramacion(TenantModel):
     """Audita una carga exitosa y conserva el estado anterior de la programación."""

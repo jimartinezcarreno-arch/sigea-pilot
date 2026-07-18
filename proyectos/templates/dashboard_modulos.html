@@ -127,6 +127,34 @@
         </div>
     </div>
 
+    {% if sigea_access.is_authenticated %}
+    <div class="row justify-content-center mt-4">
+        <div class="col-lg-8">
+            <div class="alert alert-light border shadow-sm mb-0 d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <strong>Sesión activa:</strong> {{ user.username }}
+                    <span class="badge text-bg-primary ms-2">{{ sigea_access.role_label }}</span>
+                    {% if not sigea_access.can_programar %}
+                    <span class="d-block small text-muted mt-1">Modo consulta: puedes explorar disponibilidad, agendas y reportes sin modificar la programación.</span>
+                    {% endif %}
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    {% if sigea_access.can_programar %}
+                    <a class="btn btn-outline-primary" href="{% url 'consulta_aulas' %}#importar-programacion">
+                        <i class="fas fa-file-excel me-1"></i>Importar Excel
+                    </a>
+                    {% endif %}
+                    {% if sigea_access.can_administrar %}
+                    <a class="btn btn-outline-dark" href="{% url 'gestionar_usuarios' %}">
+                        <i class="fas fa-users-cog me-1"></i>Gestión de Usuarios
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="row mt-5">
         <div class="col-12 text-center">
             <div class="alert alert-info d-inline-block">
