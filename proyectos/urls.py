@@ -1,6 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
+from . import mapa_views
 
 urlpatterns = [
 
@@ -31,8 +32,14 @@ urlpatterns = [
 
     path(
         "mapa/",
-        views.mapa_interactivo,
+        mapa_views.mapa_interactivo,
         name="mapa_interactivo"
+    ),
+
+    path(
+        "mapa/api/<int:edificio_id>/",
+        mapa_views.api_estado_plano,
+        name="api_estado_plano"
     ),
 
     path(

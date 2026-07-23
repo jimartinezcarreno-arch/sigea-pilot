@@ -132,6 +132,7 @@ class Sede(TenantModel):
 class Edificio(TenantModel):
     sede = models.ForeignKey(Sede, on_delete=models.CASCADE, related_name='edificios')
     nombre = models.CharField(max_length=150)
+    plano_evacuacion = models.ImageField(upload_to='planos/', blank=True, null=True)
 
     def __str__(self):
         return f"{self.nombre} ({self.sede.nombre})"
@@ -149,6 +150,8 @@ class Aula(TenantModel):
     tipo_espacio = models.CharField(max_length=10, choices=TIPO_ESPACIO_CHOICES)
     dimensiones_m2 = models.FloatField(blank=True, null=True)
     recursos = models.JSONField(default=dict, blank=True) # Almacena proyectores, aire acondicionado, etc.
+    plano_x = models.FloatField(blank=True, null=True, help_text="Coordenada X en porcentaje respecto al plano")
+    plano_y = models.FloatField(blank=True, null=True, help_text="Coordenada Y en porcentaje respecto al plano")
 
     def __str__(self):
         return f"{self.nombre} - {self.edificio.nombre}"
