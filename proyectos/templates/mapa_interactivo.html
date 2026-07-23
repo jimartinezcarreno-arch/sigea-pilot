@@ -2,152 +2,121 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Mapa Interactivo de Aulas</title>
-    <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <title>Mapa Interactivo</title>
     <style>
-        #map-container {
-            width: 100%;
-            height: 700px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background-color: #e9ecef;
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #F3F2F1; /* Azure Gray */
+            color: #323130; /* Azure Dark */
+            margin: 20px;
         }
-        .info-panel {
+        h2 {
+            color: #0078D4; /* Azure Primary */
+        }
+        #mapa {
+            border: 1px solid #ddd;
             background: white;
-            padding: 15px;
+            padding: 10px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 1000px;
+            margin: auto;
         }
-        /* Custom markers */
-        .marker-libre {
-            filter: hue-rotate(80deg); /* Verde */
+        .aula {
+            cursor: pointer;
+            fill: #00BCF2; /* Azure Light */
         }
-        .marker-ocupado {
-            filter: hue-rotate(0deg); /* Rojo normal */
+        .aula:hover {
+            fill: #0078D4; /* Azure Primary */
+        }
+        .ruta {
+            stroke: red;
+            stroke-width: 3;
+            fill: none;
         }
     </style>
 </head>
-<body class="bg-light">
-
-<div class="container-fluid py-4">
-    <h2 class="mb-4 text-primary">Mapa Interactivo de Ocupación</h2>
-    
-    <div class="row mb-3">
-        <div class="col-md-4">
-            <select id="edificio-select" class="form-select">
-                <option value="">Seleccione un edificio...</option>
-                {% for edif in edificios_con_plano %}
-                    <option value="{{ edif.id }}" {% if edif.id == edificio_seleccionado.id %}selected{% endif %}>{{ edif.nombre }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-8 text-end">
-            <span class="badge bg-success me-2">Libre</span>
-            <span class="badge bg-danger">Ocupada</span>
-        </div>
+<body>
+    <h2>Mapa Interactivo - {{ institucion_activa.nombre }}</h2>
+    <div id="mapa">
+        <!-- Ejemplo de plano SVG -->
+        <svg id="plano" width="800" height="600">
+            <!-- Entrada principal -->
+            <circle id="entrada" cx="50" cy="300" r="10" fill="green"></circle>
+            <!-- Aulas -->
+            <rect id="aula-101" class="aula" x="200" y="100" width="80" height="60"></rect>
+            <rect id="aula-102" class="aula" x="400" y="100" width="80" height="60"></rect>
+            <rect id="aula-103" class="aula" x="200" y="300" width="80" height="60"></rect>
+            <rect id="aula-104" class="aula" x="400" y="300" width="80" height="60"></rect>
+            <!-- Ruta dinámica -->
+            <path id="ruta" class="ruta"></path>
+        </svg>
     </div>
 
-    <div class="row">
-        <div class="col-12">
-            <div id="map-container"></div>
-        </div>
-    </div>
-</div>
+    <script>
+        // Grafo simple de nodos
+        const grafo = {
+            "entrada": ["aula-101", "aula-103"],
+            "aula-101": ["entrada", "aula-102"],
+            "aula-102": ["aula-101", "aula-104"],
+            "aula-103": ["entrada", "aula-104"],
+            "aula-104": ["aula-102", "aula-103"]
+        };
 
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-    let map = L.map('map-container', {
-        crs: L.CRS.Simple, // Para mapas estáticos / imágenes
-        minZoom: -1,
-        maxZoom: 2
-    });
+        // Algoritmo de Dijkstra simplificado
+        function dijkstra(origen, destino) {
+            let dist = {};
+            let prev = {};
+            let nodos = Object.keys(grafo);
 
-    let currentOverlay = null;
-    let markersLayer = L.layerGroup().addTo(map);
-
-    function loadMapData(edificioId) {
-        if(!edificioId) return;
-        
-        fetch(`/mapa/api/${edificioId}/`)
-            .then(res => res.json())
-            .then(data => {
-                // Limpiar mapa anterior
-                if(currentOverlay) {
-                    map.removeLayer(currentOverlay);
-                }
-                markersLayer.clearLayers();
-
-                if(!data.plano_url) {
-                    alert("Este edificio no tiene un plano asociado.");
-                    return;
-                }
-
-                // Cargar imagen para obtener dimensiones reales
-                let img = new Image();
-                img.src = data.plano_url;
-                img.onload = function() {
-                    let w = this.width;
-                    let h = this.height;
-                    
-                    // Definir límites de la imagen [y, x]
-                    let bounds = [[0, 0], [h, w]];
-                    
-                    currentOverlay = L.imageOverlay(data.plano_url, bounds).addTo(map);
-                    map.fitBounds(bounds);
-
-                    // Colocar pines
-                    data.aulas.forEach(aula => {
-                        // Las coordenadas relativas guardadas deben multiplicarse por w y h.
-                        // Si guardaste porcentajes (ej: 0.5), multiplicar.
-                        // Si guardaste coord directas, usarlas directamente.
-                        // Asumiremos porcentajes de 0 a 100 para x e y.
-                        let yCoord = h - (aula.y * h / 100); // Leaflet cuenta Y desde abajo
-                        let xCoord = aula.x * w / 100;
-                        
-                        let latLng = [yCoord, xCoord];
-                        
-                        // Icono custom dependiendo del estado
-                        let iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-' + (aula.ocupada ? 'red' : 'green') + '.png';
-                        let shadowUrl = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png';
-                        
-                        let customIcon = new L.Icon({
-                            iconUrl: iconUrl,
-                            shadowUrl: shadowUrl,
-                            iconSize: [25, 41],
-                            iconAnchor: [12, 41],
-                            popupAnchor: [1, -34],
-                            shadowSize: [41, 41]
-                        });
-
-                        let marker = L.marker(latLng, {icon: customIcon});
-                        let popupContent = `
-                            <strong>${aula.nombre}</strong><br>
-                            ${aula.tipo}<br>
-                            <hr style="margin:5px 0;">
-                            <b>Estado:</b> <span style="color: ${aula.ocupada ? 'red':'green'}">${aula.ocupada ? 'Ocupada':'Libre'}</span><br>
-                            ${aula.ocupada ? '<b>Clase:</b> ' + aula.clase_info : ''}
-                        `;
-                        marker.bindPopup(popupContent);
-                        markersLayer.addLayer(marker);
-                    });
-                }
+            nodos.forEach(n => {
+                dist[n] = Infinity;
+                prev[n] = null;
             });
-    }
+            dist[origen] = 0;
 
-    // Listener del selector
-    document.getElementById('edificio-select').addEventListener('change', function(e) {
-        loadMapData(e.target.value);
-    });
+            while (nodos.length) {
+                nodos.sort((a, b) => dist[a] - dist[b]);
+                let u = nodos.shift();
+                if (u === destino) break;
+                grafo[u].forEach(v => {
+                    let alt = dist[u] + 1;
+                    if (alt < dist[v]) {
+                        dist[v] = alt;
+                        prev[v] = u;
+                    }
+                });
+            }
 
-    // Cargar mapa inicial si hay uno seleccionado
-    let initialEdificio = document.getElementById('edificio-select').value;
-    if(initialEdificio) {
-        loadMapData(initialEdificio);
-    }
-</script>
+            let camino = [];
+            let u = destino;
+            while (prev[u]) {
+                camino.unshift(u);
+                u = prev[u];
+            }
+            camino.unshift(origen);
+            return camino;
+        }
+
+        // Dibujar ruta en SVG
+        function dibujarRuta(camino) {
+            let puntos = camino.map(id => {
+                let el = document.getElementById(id);
+                let bbox = el.getBBox();
+                return [bbox.x + bbox.width/2, bbox.y + bbox.height/2];
+            });
+            let d = "M" + puntos.map(p => p.join(",")).join(" L");
+            document.getElementById("ruta").setAttribute("d", d);
+        }
+
+        // Evento al hacer clic en un aula
+        document.querySelectorAll(".aula").forEach(aula => {
+            aula.addEventListener("click", () => {
+                let destino = aula.id;
+                let camino = dijkstra("entrada", destino);
+                dibujarRuta(camino);
+                alert("Ruta calculada hacia " + destino);
+            });
+        });
+    </script>
 </body>
 </html>
