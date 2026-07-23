@@ -12,12 +12,12 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
         }
         .container-fluid {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
-            padding: 40px;
+            padding: 30px 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
         .display-4 {
@@ -38,6 +38,64 @@
         }
         .text-info {
             color: #3b82f6 !important;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+            .container-fluid {
+                padding: 20px 15px;
+                border-radius: 15px;
+            }
+            .display-4 {
+                font-size: 2rem !important;
+            }
+            .fa-4x {
+                font-size: 2.5rem !important;
+            }
+            .card-body {
+                padding: 1.5rem 1rem;
+            }
+            .card-title {
+                font-size: 1.1rem !important;
+            }
+            .card-text {
+                font-size: 0.85rem !important;
+            }
+            .btn-lg {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .display-4 {
+                font-size: 1.75rem !important;
+            }
+            .fa-4x {
+                font-size: 2rem !important;
+            }
+            .card-body {
+                padding: 1rem 0.75rem;
+            }
+            .card-title {
+                font-size: 1rem !important;
+            }
+            .card-text {
+                font-size: 0.8rem !important;
+            }
+            .btn-lg {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .container-fluid {
+                padding: 40px;
+            }
         }
     </style>
 </head>
