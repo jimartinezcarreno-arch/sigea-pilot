@@ -6,18 +6,28 @@ SIGEA es una plataforma web para la gestión eficiente de espacios académicos (
 
 ## Características Implementadas
 
-### Dashboard Principal
-- **Consulta de disponibilidad de aulas** en tiempo real
-- **Filtros rápidos** para espacios libres/ocupados
-- **Filtrado por sede, edificio, aula, docente y hora**
-- **Visualización de estado** con tarjetas informativas
-- **Indicadores de tiempo libre** hasta próxima clase
-- **Layout responsivo** con 4-5 tarjetas por fila
-- **Agrupación dinámica** de tarjetas filtradas sin espacios vacíos
+### Dashboard de Módulos (Nuevo)
+- **Página de selección** después del login
+- **4 módulos principales:**
+  - Consultar Aulas (funcional)
+  - Horarios de Oficina (próximamente)
+  - Cafetería (próximamente)
+  - Otros Espacios (próximamente)
+- **Diseño moderno** con gradientes y animaciones
+- **Responsive optimizado** para móviles, tablets y desktop
+- **Interfaz intuitiva** con iconos descriptivos
+
+### Consulta de Aulas
+- **Consulta de disponibilidad** en tiempo real
+- **Filtrado por sede, edificio, aula y docente**
+- **Visualización de estado** (libre/ocupada) según hora de consulta
+- **Cálculo de tiempo libre** hasta próxima clase
+- **Diseño responsivo** con tarjetas informativas
+- **Colores semánticos** (verde=libre, rojo=ocupado)
 
 ### Sistema de Autenticación
 - **Login seguro** con diseño moderno
-- **Gestión de usuarios** con roles
+- **Gestión de usuarios** con roles (Administrador, Programador Académico, Consulta)
 - **Protección de rutas** mediante middleware
 - **Soporte multi-tenant** por institución
 - **Cierre de sesión** seguro
@@ -28,7 +38,8 @@ SIGEA es una plataforma web para la gestión eficiente de espacios académicos (
 - **Mapeo automático** de sedes, edificios y aulas
 - **Creación dinámica** de estructura organizacional
 - **Respaldo automático** de programación anterior
-- **Historial de importaciones**
+- **Historial de importaciones** con capacidad de restauración
+- **Corrección reciente:** Estrategia mejorada para omitir filas con errores en lugar de cancelar toda la importación
 
 ### Agenda Docente
 - **Vista de calendario** interactiva
@@ -258,32 +269,46 @@ PILOT_INSTITUTION_NAME=SIGEA Pilot
 - **Render.com** - Plataforma de deploy
 - **PostgreSQL** - Base de datos producción
 
-## Estado Actual del Proyecto
+## Estado Actual del Proyecto (Julio 2026)
 
 ### Funcionalidades Completadas ✅
-- Dashboard principal con filtros
-- Sistema de autenticación completo
-- Importación de Excel robusta
-- Agenda docente interactiva
-- Dashboard de reportes y métricas
-- Sistema de detección de conflictos
-- Filtros rápidos de espacios
-- Diseño responsivo moderno
-- Multi-tenancy por institución
-- Deploy automatizado en Render
+- **Dashboard de módulos** como página de inicio post-login
+- **Consulta de aulas** con filtrado y estado en tiempo real
+- **Sistema de autenticación** completo con roles
+- **Importación de Excel** robusta con manejo de errores mejorado
+- **Agenda docente** interactiva
+- **Dashboard de reportes** y métricas
+- **Sistema de detección** de conflictos
+- **Diseño responsivo** optimizado para todos los dispositivos
+- **Multi-tenancy** por institución
+- **Deploy automatizado** en Render
+
+### Correcciones Recientes (Julio 2026)
+- **Importación Excel:** Estrategia mejorada para omitir filas con errores en lugar de cancelar toda la importación
+- **Dashboard de Módulos:** Conversión a HTML completo sin herencia de templates
+- **Responsive Dashboard:** Implementación de media queries para móviles, tablets y desktop
 
 ### Limitaciones Conocidas
-- **Mapa interactivo** pendiente de implementación
-- **Importación de Excel** puede tener problemas con datos preexistentes
-- **Sistema de notificaciones** básico (puede mejorarse)
+- **Módulos pendientes:** Horarios de Oficina, Cafetería, Otros Espacios (solo dashboard creado)
+- **Mapa interactivo:** Pendiente de implementación con funcionalidades de navegación y evacuación
+- **Sistema de notificaciones:** Básico (puede mejorarse)
 
-### Próximas Mejoras Sugeridas
-- Mapa interactivo con notificaciones
-- Sistema de notificaciones avanzado
-- Exportación de reportes en PDF/Excel
-- API REST para integraciones
-- Módulo de reservas de espacios
-- Análisis predictivo de ocupación
+### Próximos Pasos Prioritarios
+1. **Implementar módulo de Horarios de Oficina**
+   - Crear modelos para horarios de atención
+   - Vista de consulta por docente
+   - Sistema de citas básico
+
+2. **Implementar módulo de Cafetería**
+   - Crear modelos para horarios de servicio
+   - Vista de disponibilidad y capacidad
+   - Alertas de aforo
+
+3. **Mapa Interactivo**
+   - Navegación a espacios con cálculo de rutas
+   - Rutas de evacuación con alertas de emergencia
+   - Integración con datos de ocupación en tiempo real
+   - Consulta de detalles al hacer clic en aulas
 
 ## Soporte y Mantenimiento
 
@@ -306,11 +331,18 @@ PILOT_INSTITUTION_NAME=SIGEA Pilot
 
 **Desarrollado para:** Gestión eficiente de espacios académicos en instituciones educativas
 
-**Versión Actual:** 1.0 (Producción en Render)
+**Versión Actual:** 1.2 (Producción en Render)
 
 **Estado:** Activo para pruebas institucionales con autenticación
 
+**Última actualización:** Julio 2026
+
+**Cambios recientes:**
+- Dashboard de módulos como página de inicio
+- Mejoras en responsive design
+- Corrección de errores en importación Excel
+- Limpieza de archivos innecesarios del proyecto
+
 ---
 
-*Última actualización: Julio 2026*
 *Documentación generada automáticamente basada en el estado actual del proyecto*
