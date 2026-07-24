@@ -4,6 +4,10 @@
 
 SIGEA es una plataforma web para la gestión eficiente de espacios académicos (aulas, laboratorios, auditorios) en instituciones educativas. Permite consultar disponibilidad en tiempo real, gestionar programación académica, optimizar el uso de infraestructura y detectar conflictos de horarios.
 
+**Visión SIGEA 2.0:** Enfoque en gestión de espacios con extensiones estratégicas (mapa interactivo, offline-first, asistencia QR) que no desvían el objetivo principal.
+
+**SIGEA School:** Complemento educativo opcional para instituciones que requieren gestión académica integral (estudiantes, calificaciones, matrículas).
+
 ## Características Implementadas
 
 ### Dashboard de Módulos (Nuevo)
@@ -271,6 +275,16 @@ PILOT_INSTITUTION_NAME=SIGEA Pilot
 
 ## Estado Actual del Proyecto (Julio 2026)
 
+### Visión SIGEA 2.0
+
+**SIGEA Core:** Sistema Inteligente de Gestión de Espacios Académicos
+- Enfoque: Gestión de aulas, horarios, disponibilidad, optimización de infraestructura
+- Mercado: Colegios, universidades, institutos técnicos
+
+**SIGEA School:** Complemento educativo opcional
+- Enfoque: Gestión de estudiantes, calificaciones, matrículas, asistencia
+- Mercado: Colegios que requieren gestión académica integral
+
 ### Funcionalidades Completadas ✅
 - **Dashboard de módulos** como página de inicio post-login
 - **Consulta de aulas** con filtrado y estado en tiempo real
@@ -287,28 +301,90 @@ PILOT_INSTITUTION_NAME=SIGEA Pilot
 - **Importación Excel:** Estrategia mejorada para omitir filas con errores en lugar de cancelar toda la importación
 - **Dashboard de Módulos:** Conversión a HTML completo sin herencia de templates
 - **Responsive Dashboard:** Implementación de media queries para móviles, tablets y desktop
+- **Limpieza de proyecto:** Eliminación de archivos innecesarios y scripts de prueba
 
 ### Limitaciones Conocidas
-- **Módulos pendientes:** Horarios de Oficina, Cafetería, Otros Espacios (solo dashboard creado)
 - **Mapa interactivo:** Pendiente de implementación con funcionalidades de navegación y evacuación
-- **Sistema de notificaciones:** Básico (puede mejorarse)
+- **Offline-first:** Pendiente para colegios rurales
+- **Asistencia QR:** Pendiente para confirmar presencia docente
+- **2FA:** Pendiente para máxima seguridad
+- **OAuth institucional:** Pendiente para login con Google/Microsoft
 
-### Próximos Pasos Prioritarios
-1. **Implementar módulo de Horarios de Oficina**
-   - Crear modelos para horarios de atención
-   - Vista de consulta por docente
-   - Sistema de citas básico
+### Roadmap SIGEA 2.0
 
-2. **Implementar módulo de Cafetería**
-   - Crear modelos para horarios de servicio
-   - Vista de disponibilidad y capacidad
-   - Alertas de aforo
+#### Fase 1: Solidificar Core SIGEA
+1. **Mejorar gestión de espacios existente**
+   - Optimizar filtros de búsqueda
+   - Mejorar detección de conflictos
+   - Dashboard de métricas de ocupación
 
-3. **Mapa Interactivo**
-   - Navegación a espacios con cálculo de rutas
-   - Rutas de evacuación con alertas de emergencia
-   - Integración con datos de ocupación en tiempo real
-   - Consulta de detalles al hacer clic en aulas
+2. **Mapa Interactivo (Prioridad Alta)**
+   - Navegación básica con rutas óptimas
+   - Ocupación en tiempo real
+   - Importación de planos
+   - Rutas de evacuación
+
+3. **Offline-First Básico**
+   - Service Workers para caché
+   - IndexedDB para almacenamiento local
+   - Modo lectura offline
+   - Sincronización automática
+
+4. **2FA (Autenticación de Dos Factores)**
+   - Google Authenticator
+   - SMS como alternativa
+   - Configuración por usuario
+
+5. **Auditoría Completa**
+   - Registro de LOGIN/LOGOUT
+   - Registro de consultas
+   - IP address y user agent
+   - Reportes de actividad
+
+#### Fase 2: Extensiones Estratégicas
+1. **Asistencia QR Simple**
+   - Generación de QR por aula
+   - Escaneo por docente
+   - Registro de presencia
+   - Reportes de asistencia
+
+2. **Tablón de Anuncios**
+   - Publicación por institución
+   - Prioridad y audiencia
+   - Notificaciones push
+
+3. **API REST Básica**
+   - Endpoints principales
+   - Autenticación JWT
+   - Documentación Swagger
+
+4. **Reportes Avanzados**
+   - Exportación PDF/Excel
+   - Filtros temporales
+   - Gráficos mejorados
+
+5. **OAuth Institucional (Google/Microsoft)**
+   - Login con credenciales institucionales
+   - Verificación de dominio
+   - SSO con otros servicios
+
+#### Fase 3: Opcionales (Solo si hay demanda)
+1. **Módulo Financiero**
+   - Gestión de pagos estudiantes
+   - Facturación básica
+
+2. **Integración SIMAT**
+   - Exportación compatible con Ministerio Educación
+
+### SIGEA School (Complemento Opcional)
+
+#### Módulos
+1. Gestión de Estudiantes
+2. Matrículas
+3. Calificaciones y Boletines
+4. Asistencia Estudiantil
+5. Comunicación
+6. Dashboard Educativo
 
 ## Soporte y Mantenimiento
 
@@ -331,17 +407,21 @@ PILOT_INSTITUTION_NAME=SIGEA Pilot
 
 **Desarrollado para:** Gestión eficiente de espacios académicos en instituciones educativas
 
-**Versión Actual:** 1.2 (Producción en Render)
+**Versión Actual:** 2.0 (Roadmap definido, implementación en progreso)
 
 **Estado:** Activo para pruebas institucionales con autenticación
 
 **Última actualización:** Julio 2026
 
 **Cambios recientes:**
-- Dashboard de módulos como página de inicio
-- Mejoras en responsive design
-- Corrección de errores en importación Excel
+- Definición de roadmap SIGEA 2.0
+- Visión SIGEA Core + SIGEA School
+- Documentación de requerimientos actualizada
 - Limpieza de archivos innecesarios del proyecto
+
+**Documentación adicional:**
+- `SIGEA_2.0_Requirements.md` - Roadmap detallado de SIGEA 2.0
+- `VALIDACION_REQUERIMIENTOS.md` - Requerimientos originales del proyecto
 
 ---
 
