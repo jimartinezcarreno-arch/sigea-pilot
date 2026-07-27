@@ -266,9 +266,9 @@ Importar Excel
 </div>
 
 
-<div class="col-md-9">
+<main class="col-md-9 dashboard-main">
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4 dashboard-header">
 
     <div>
 
@@ -294,7 +294,7 @@ Importar Excel
 
     </div>
 
-    <div class="text-end">
+    <div class="text-end dashboard-header-actions">
 
         <div class="text-muted">
 
@@ -303,7 +303,7 @@ Importar Excel
         </div>
 
         <div class="mt-2">
-            <select class="form-select form-select-sm" id="selectorDocente" style="width: 200px;">
+            <select class="form-select form-select-sm" id="selectorDocente">
                 <option value="">Ver agenda docente...</option>
                 {% for docente in docentes_select %}
                 <option value="{{ docente.id }}">{{ docente.nombre }}</option>
@@ -368,7 +368,7 @@ Importar Excel
 
 <div class="row mb-4">
 
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-xl-3">
 
         <div class="card stats-card stats-card-clases h-100">
 
@@ -394,7 +394,7 @@ Importar Excel
 
     </div>
 
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-xl-3">
 
         <button type="button" class="card stats-card stats-card-libres h-100 stats-filter" data-filtro-estado="DISPONIBLE" aria-pressed="false">
 
@@ -422,7 +422,7 @@ Importar Excel
 
     </div>
 
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-xl-3">
 
         <button type="button" class="card stats-card stats-card-ocupadas h-100 stats-filter" data-filtro-estado="OCUPADA" aria-pressed="false">
 
@@ -450,7 +450,7 @@ Importar Excel
 
     </div>
 
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-xl-3">
 
         <button type="button" class="card stats-card stats-card-todos h-100 stats-filter" data-filtro-estado="" aria-pressed="true">
 
@@ -624,6 +624,7 @@ Importar Excel
 
         {% endif %}
 
+        <div class="table-responsive-mobile">
         <table class="table table-dark table-sm align-middle">
 
             <thead>
@@ -691,6 +692,7 @@ Importar Excel
             </tbody>
 
         </table>
+        </div>
 
     </div>
 
@@ -712,7 +714,7 @@ No existen espacios para mostrar.
 
 </div>
 
-</div>
+</main>
 
 </div>
 
@@ -795,10 +797,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const filterButtons = document.querySelectorAll('.stats-filter');
     let estadoActivo = '';
 
-    function columnasActuales() {
-        if (window.matchMedia('(min-width: 1800px)').matches) return 5;
-        if (window.matchMedia('(min-width: 1200px)').matches) return 4;
-        if (window.matchMedia('(min-width: 768px)').matches) return 2;
+    function columnasActuales(anchoDisponible) {
+        // La barra lateral reduce el espacio real del tablero. Estas reglas usan
+        // ese ancho útil para no comprimir las tarjetas en portátiles.
+        if (anchoDisponible >= 1530) return 5;
+        if (anchoDisponible >= 1220) return 4;
+        if (anchoDisponible >= 920) return 3;
+        if (anchoDisponible >= 620) return 2;
         return 1;
     }
 
@@ -812,7 +817,7 @@ document.addEventListener('DOMContentLoaded', function () {
             item.hidden = !mostrar;
             return mostrar;
         });
-        const columnas = columnasActuales();
+        const columnas = columnasActuales(grid.clientWidth);
         const separacion = 24;
         const ancho = (grid.clientWidth - separacion * (columnas - 1)) / columnas;
         const alturas = Array(columnas).fill(0);

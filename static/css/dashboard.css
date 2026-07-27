@@ -57,6 +57,7 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     line-height: 1.6;
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
 /* --- BARRA LATERAL (SIDEBAR) --- */
@@ -66,6 +67,15 @@ body {
     min-height: 100vh;
     padding: 32px 24px;
     box-shadow: var(--shadow-sm);
+}
+
+.dashboard-main {
+    min-width: 0;
+    padding: 32px 28px 48px;
+}
+
+.dashboard-header-actions .form-select {
+    width: 220px;
 }
 
 .sidebar h4 {
@@ -253,6 +263,7 @@ body {
     position: absolute;
     top: 0;
     left: 0;
+    min-width: 0;
     transition: transform 0.25s ease, opacity 0.2s ease;
 }
 
@@ -391,6 +402,12 @@ body {
     border-bottom: 1px solid var(--border) !important;
 }
 
+.table-responsive-mobile {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 .dashboard-card table.table tr:last-child td {
     border-bottom: none !important;
 }
@@ -417,12 +434,56 @@ body {
 }
 
 /* --- DISEÑO RESPONSIVO --- */
-@media (max-width: 768px) {
+@media (min-width: 768px) {
+    .sidebar {
+        align-self: flex-start;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .container-fluid {
+        padding-right: 0;
+        padding-left: 0;
+    }
+
+    .container-fluid > .row {
+        margin-right: 0;
+        margin-left: 0;
+    }
+
     .sidebar {
         min-height: auto;
-        padding: 20px;
+        padding: 20px 16px;
         border-right: none;
         border-bottom: 1px solid var(--border);
+    }
+
+    .dashboard-main {
+        padding: 24px 16px 36px;
+    }
+
+    .dashboard-header {
+        align-items: flex-start !important;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .dashboard-header-actions {
+        width: 100%;
+        text-align: left !important;
+    }
+
+    .dashboard-header-actions .form-select {
+        width: 100%;
+    }
+
+    .stats-card {
+        min-height: 150px;
+        padding: 20px;
     }
 
     .dashboard-card {
@@ -437,6 +498,10 @@ body {
     .estado-badge {
         font-size: 0.7rem;
         padding: 4px 8px;
+    }
+
+    .dashboard-card table.table {
+        min-width: 350px;
     }
 }
 
