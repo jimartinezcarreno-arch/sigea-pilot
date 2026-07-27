@@ -15,7 +15,7 @@ class TenantManager(models.Manager):
         queryset = super().get_queryset()
         if institucion_activa:
             return queryset.filter(institucion=institucion_activa)
-        # En un host sin instituciÃ³n reconocida, nunca se deben exponer datos de otra entidad.
+        # En un host sin institución reconocida, nunca se deben exponer datos de otra entidad.
         return queryset.none()
 
 class TenantModel(models.Model):
@@ -47,7 +47,7 @@ class Institucion(models.Model):
 
 
 class PerfilUsuario(models.Model):
-    """Vincula cada cuenta de acceso con una Ãºnica instituciÃ³n del piloto."""
+    """Vincula cada cuenta de acceso con una única institución del piloto."""
     ROL_CHOICES = [
         ('ADMIN', 'Administrador institucional'),
         ('PROGRAMADOR', 'Programador académico'),

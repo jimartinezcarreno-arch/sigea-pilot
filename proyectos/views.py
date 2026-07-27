@@ -3,24 +3,19 @@ from django.http import JsonResponse, HttpResponseNotAllowed
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Prefetch
+from django.utils import timezone
 from datetime import datetime, date, time
 from collections import defaultdict
 import logging
 import json
 from .tenant_utils import get_current_institucion
-from .services.excel_importer import ExcelImporter
-import openpyxl
 
 from .models import (
     Sede,
     Edificio,
     Aula,
     Clase,
-    PeriodoAcademico,
-    MomentoAcademico,
     Docente,
-    Institucion,
-    ModalidadAcademica
 )
 
 
@@ -140,7 +135,8 @@ def aulas_disponibles(request):
     )
 
     resultado = []
-    dia_actual = datetime.now().weekday() + 1  # Django usa 1=Lunes, 7=Domingo
+    ahora_local = timezone.localtime()
+    dia_actual = ahora_local.weekday() + 1  # Django usa 1=Lunes, 7=Domingo
     libres_count = 0
     ocupadas_count = 0
 
@@ -258,88 +254,6 @@ def aulas_disponibles(request):
     )
 
 # -------------------------------
-# IMPORTACIÓN DE EXCEL
-# -------------------------------
-def subir_excel(request):
-    """
-    Carga la programación académica desde un archivo Excel.
-    Toda la lógica del proceso vive en ExcelImporter.
-    """
-
-    if request.method != "POST":
-        return redirect("consulta_aulas")
-
-    archivo = request.FILES.get("archivo_excel")
-
-    if not archivo:
-        messages.error(request, "Debe seleccionar un archivo Excel.")
-        return redirect("consulta_aulas")
-
-    # Intentar obtener la institución activa
-    institucion = get_current_institucion()
-
-    # Durante el desarrollo usar la primera registrada
-    if institucion is None:
-        institucion = Institucion.objects.first()
-
-    # Si no existe ninguna, crear una
-    if institucion is None:
-        institucion = Institucion.objects.create(
-            nombre="SIGEA",
-            subdominio="localhost",
-            hora_inicio_jornada=time(6, 0),
-            hora_fin_jornada=time(22, 0),
-            activo=True,
-        )
-
-    servicio = ExcelImporter(
-        archivo=archivo,
-        institucion=institucion
-    )
-
-    resultado = servicio.importar()
-
-    if resultado["errores"]:
-        for error in resultado["errores"][:20]:
-            messages.warning(request, error)
-
-    if resultado.get("sedes_creadas"):
-        messages.info(
-            request,
-            "Sedes nuevas detectadas y creadas automáticamente: "
-            + ", ".join(sorted(set(resultado["sedes_creadas"])))
-        )
-
-    if resultado.get("edificios_creados"):
-        messages.info(
-            request,
-            "Edificios nuevos detectados y creados automáticamente: "
-            + ", ".join(sorted(set(resultado["edificios_creados"])))
-        )
-
-    if resultado.get("aulas_creadas"):
-        messages.info(
-            request,
-            "Aulas nuevas creadas con capacidad provisional de 30 personas: "
-            + ", ".join(sorted(set(resultado["aulas_creadas"])))
-        )
-
-    messages.success(
-        request,
-        f"Importación finalizada. Se cargaron {resultado['total']} clases."
-    )
-
-    return redirect("consulta_aulas")
-
-# -------------------------------
-# MAPA INTERACTIVO
-# -------------------------------
-def mapa_interactivo(request):
-    institucion = Institucion.objects.first()
-    return render(request, 'mapa_interactivo.html', {"institucion_activa": institucion})
-
-
-# -------------------------------
 # SELECTORES AJAX
 # -------------------------------
 
@@ -389,7 +303,7 @@ def obtener_aulas(request):
 # REPORTE DE CONFLICTOS
 # -------------------------------
 def reporte_conflictos(request):
-    institucion = Institucion.objects.first()
+    institucion = get_current_institucion()
     conflictos = []
     clases = Clase.objects.select_related('aula', 'docente', 'aula__edificio').all()
 
@@ -454,7 +368,7 @@ def asignar_aula_alternativa(request, clase_id, aula_id):
             hora_fin__gt=clase.hora_inicio,
         ).exclude(id=clase.id).exists()
         if aula_ocupada:
-            messages.error(request, "El aula sugerida ya no estÃ¡ disponible en ese horario.")
+            messages.error(request, "El aula sugerida ya no está disponible en ese horario.")
             return redirect("reporte_conflictos")
 
         clase.aula = aula
@@ -553,7 +467,7 @@ def dashboard_reportes(request):
             'clases': len(clases_docente),
         })
     
-    # El grÃ¡fico conserva un resumen legible; la tabla muestra todos los docentes.
+    # El gráfico conserva un resumen legible; la tabla muestra todos los docentes.
     docentes_data = sorted(docentes_data, key=lambda x: x['horas'], reverse=True)
     top_docentes = docentes_data[:10]
     docentes_labels = [d['nombre'] for d in top_docentes]

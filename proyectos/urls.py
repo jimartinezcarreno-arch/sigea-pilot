@@ -25,12 +25,6 @@ urlpatterns = [
     ),
 
     path(
-        "subir-excel/",
-        views.subir_excel,
-        name="subir_excel"
-    ),
-
-    path(
         "mapa/",
         mapa_views.mapa_interactivo,
         name="mapa_interactivo"

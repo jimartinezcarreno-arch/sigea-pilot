@@ -21,7 +21,7 @@ class TenantMiddleware:
         # Si estás en localhost o tienes un dominio completo:
         primary_tenant_host = os.environ.get('PRIMARY_TENANT_HOST')
         if host in {'localhost', '127.0.0.1', '0.0.0.0', 'testserver'} or host == primary_tenant_host:
-            # Mantiene una instituciÃ³n de desarrollo/piloto explÃ­cita sin abrir datos en hosts desconocidos.
+            # Mantiene una institución de desarrollo/piloto explícita sin abrir datos en hosts desconocidos.
             subdominio_actual = os.environ.get('DEFAULT_TENANT_SUBDOMAIN', 'sigea')
         elif len(host_parts) > 1 and host_parts[0] != 'www':
             subdominio_actual = host_parts[0]
@@ -44,7 +44,7 @@ class TenantMiddleware:
 
 
 class TenantAccessMiddleware:
-    """Exige autenticaciÃ³n y valida la pertenencia al tenant cuando se activa el piloto."""
+    """Exige autenticación y valida la pertenencia al tenant cuando se activa el piloto."""
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -65,6 +65,6 @@ class TenantAccessMiddleware:
         institucion = get_current_institucion()
         perfil = getattr(request.user, 'perfil_sigea', None)
         if not institucion or not perfil or not perfil.activo or perfil.institucion_id != institucion.id:
-            return HttpResponseForbidden('No tienes acceso a esta instituciÃ³n.')
+            return HttpResponseForbidden('No tienes acceso a esta institución.')
 
         return self.get_response(request)
