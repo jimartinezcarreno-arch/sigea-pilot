@@ -7,6 +7,7 @@ from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.urls import reverse
 from openpyxl import Workbook, load_workbook
 
 from .models import Aula, Clase, Docente, Edificio, ImportacionProgramacion, Institucion, ModalidadAcademica, MomentoAcademico, PerfilUsuario, PeriodoAcademico, Sede
@@ -135,6 +136,23 @@ class SIGEATestCase(TestCase):
 
         respuesta = self.client.post('/salir/', HTTP_HOST='inst1.localhost')
         self.assertRedirects(respuesta, '/acceso/')
+
+    @override_settings(REQUIRE_LOGIN=True)
+    def test_navegacion_global_muestra_inicio_y_cierre_de_sesion(self):
+        usuario = get_user_model().objects.create_user(
+            username='navegacion', password='ClaveSegura123!'
+        )
+        PerfilUsuario.objects.create(user=usuario, institucion=self.inst1, rol='CONSULTA')
+        self.client.force_login(usuario)
+
+        inicio = self.client.get('/', HTTP_HOST='inst1.localhost')
+        self.assertContains(inicio, 'Cerrar sesión')
+        self.assertContains(inicio, 'action="/salir/"')
+
+        consulta = self.client.get('/consultar-aulas/', HTTP_HOST='inst1.localhost')
+        self.assertContains(consulta, 'Módulos')
+        self.assertContains(consulta, f'href="{reverse("dashboard_modulos")}"')
+        self.assertContains(consulta, 'Cerrar sesión')
 
     @override_settings(REQUIRE_LOGIN=True)
     def test_administrador_puede_restaurar_programacion_previa(self):

@@ -146,7 +146,7 @@ Esta estructura es una meta de organización, no una tarea de migración masiva.
 
 **Objetivo:** que una institución pueda operar un periodo académico completo sin depender de intervención técnica.
 
-1. Corregir los detalles de experiencia detectados en las pruebas reales: codificación de textos, responsive, mensajes de error y rutas incompletas.
+1. Corregir los detalles de experiencia detectados en las pruebas reales: codificación de textos, responsive, mensajes de error y rutas incompletas. La navegación global debe permitir volver a módulos y cerrar sesión de forma segura desde cualquier módulo.
 2. Completar la regla de disponibilidad útil:
    - cuando una clase termina, mostrar el intervalo real hasta la siguiente, por ejemplo: `Libre por los próximos 45 min`;
    - si una clase está en curso, diferenciar claramente entre "ocupada hasta" y el siguiente intervalo libre;

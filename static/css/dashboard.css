@@ -78,6 +78,10 @@ body {
     width: 220px;
 }
 
+.dashboard-global-actions .btn {
+    white-space: nowrap;
+}
+
 .sidebar h4 {
     font-weight: 800;
     font-size: 1.5rem;
@@ -479,6 +483,10 @@ body {
 
     .dashboard-header-actions .form-select {
         width: 100%;
+    }
+
+    .dashboard-global-actions {
+        justify-content: flex-start !important;
     }
 
     .stats-card {

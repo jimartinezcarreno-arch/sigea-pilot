@@ -20,6 +20,20 @@
             padding: 30px 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
+        .module-topbar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .module-session-chip {
+            color: #475569;
+            font-size: 0.9rem;
+        }
+        .module-logout-form {
+            margin: 0;
+        }
         .display-4 {
             font-weight: 800;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -68,6 +82,13 @@
                 padding: 0.5rem 1rem;
                 font-size: 0.9rem;
             }
+            .module-topbar {
+                justify-content: space-between;
+                align-items: flex-start;
+            }
+            .module-session-chip {
+                max-width: 58%;
+            }
         }
 
         @media (max-width: 576px) {
@@ -101,6 +122,21 @@
 </head>
 <body>
 <div class="container-fluid py-4">
+    {% if sigea_access.is_authenticated %}
+    <header class="module-topbar" aria-label="Sesión">
+        <div class="module-session-chip">
+            <i class="fas fa-user-circle me-1"></i>
+            <strong>{{ user.username }}</strong>
+            <span class="badge text-bg-primary ms-1">{{ sigea_access.role_label }}</span>
+        </div>
+        <form method="post" action="{% url 'logout' %}" class="module-logout-form">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-warning btn-sm">
+                <i class="fas fa-sign-out-alt me-1"></i>Cerrar sesión
+            </button>
+        </form>
+    </header>
+    {% endif %}
     <div class="row">
         <div class="col-12">
             <div class="text-center mb-5">
