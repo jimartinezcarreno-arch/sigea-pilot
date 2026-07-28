@@ -1,428 +1,256 @@
-# SIGEA - Sistema Inteligente de Gestión de Espacios Académicos
+# SIGEA Core
 
-## Descripción del Proyecto
+> Sistema Inteligente para la Gestión de Espacios Académicos.
 
-SIGEA es una plataforma web para la gestión eficiente de espacios académicos (aulas, laboratorios, auditorios) en instituciones educativas. Permite consultar disponibilidad en tiempo real, gestionar programación académica, optimizar el uso de infraestructura y detectar conflictos de horarios.
+SIGEA ayuda a una institución a cargar su programación académica, consultar la disponibilidad de sus espacios y resolver conflictos de horario con una única fuente de información. El producto se concentra en **espacios, programación y ocupación**; cualquier módulo ajeno a ese núcleo queda fuera de este repositorio y de esta hoja de ruta.
 
-**Visión SIGEA 2.0:** Enfoque en gestión de espacios con extensiones estratégicas (mapa interactivo, offline-first, asistencia QR) que no desvían el objetivo principal.
+## Estado, validado el 28 de julio de 2026
 
-**SIGEA School:** Complemento educativo opcional para instituciones que requieren gestión académica integral (estudiantes, calificaciones, matrículas).
+**SIGEA es hoy un piloto institucional funcional con base multi-institución.** Está listo para seguir validándose con instituciones reales bajo acompañamiento. Aún no es un SaaS comercial listo para vender de forma autoservicio: faltan capacidades de operación, seguridad, aprovisionamiento y producto que permiten atender muchas instituciones de forma confiable.
 
-## Características Implementadas
+La distinción es deliberada:
 
-### Dashboard de Módulos (Nuevo)
-- **Página de selección** después del login
-- **4 módulos principales:**
-  - Consultar Aulas (funcional)
-  - Horarios de Oficina (próximamente)
-  - Cafetería (próximamente)
-  - Otros Espacios (próximamente)
-- **Diseño moderno** con gradientes y animaciones
-- **Responsive optimizado** para móviles, tablets y desktop
-- **Interfaz intuitiva** con iconos descriptivos
+| Nivel | Estado | Qué significa |
+| --- | --- | --- |
+| Piloto institucional | En operación | Una institución puede crear cuentas, cargar programación, consultar espacios, revisar conflictos y recuperar una importación anterior. |
+| SaaS comercial | En preparación | Falta el flujo autoservicio de alta de institución, observabilidad, soporte operativo, planes, auditoría y controles de seguridad ampliados. |
 
-### Consulta de Aulas
-- **Consulta de disponibilidad** en tiempo real
-- **Filtrado por sede, edificio, aula y docente**
-- **Visualización de estado** (libre/ocupada) según hora de consulta
-- **Cálculo de tiempo libre** hasta próxima clase
-- **Diseño responsivo** con tarjetas informativas
-- **Colores semánticos** (verde=libre, rojo=ocupado)
+### Verificaciones realizadas
 
-### Sistema de Autenticación
-- **Login seguro** con diseño moderno
-- **Gestión de usuarios** con roles (Administrador, Programador Académico, Consulta)
-- **Protección de rutas** mediante middleware
-- **Soporte multi-tenant** por institución
-- **Cierre de sesión** seguro
+- `python manage.py check`: sin incidencias.
+- `python manage.py test proyectos`: **12 pruebas aprobadas**.
+- Despliegue configurado en Render con PostgreSQL, migraciones, archivos estáticos y arranque del piloto.
+- Repositorio protegido de secretos, base local, archivos multimedia y Excel mediante `.gitignore`.
 
-### Gestión de Programación
-- **Importación de Excel** con validación de datos
-- **Soporte para múltiples formatos** de columnas
-- **Mapeo automático** de sedes, edificios y aulas
-- **Creación dinámica** de estructura organizacional
-- **Respaldo automático** de programación anterior
-- **Historial de importaciones** con capacidad de restauración
-- **Corrección reciente:** Estrategia mejorada para omitir filas con errores en lugar de cancelar toda la importación
+Las pruebas actuales cubren aislamiento básico entre instituciones, roles, agenda docente, reasignación de conflictos, restauración de importaciones y carga de Excel. No sustituyen una prueba de aceptación con datos reales ni pruebas de navegador de extremo a extremo.
 
-### Agenda Docente
-- **Vista de calendario** interactiva
-- **Filtrado por docente** con buscador
-- **Visualización de horarios** por día
-- **Detalles de asignaturas** y aulas
-- **Integración con FullCalendar**
+## Qué funciona hoy
 
-### Reportes y Análisis
-- **Dashboard de métricas** con gráficos
-- **Análisis de ocupación** de espacios
-- **Estadísticas por docente** y sede
-- **Reporte de conflictos** de horarios
-- **Reasignación automática** de aulas
+### Núcleo de producto
 
-### Gestión de Conflictos
-- **Detección automática** de superposición de horarios
-- **Sugerencias de aulas alternativas**
-- **Reasignación con un clic**
-- **Validación de disponibilidad**
+- Consulta de aulas por sede, edificio, aula, docente y hora.
+- Estado libre u ocupado, próxima clase y programación asociada a cada espacio.
+- Filtros rápidos y cuadrícula responsiva: una tarjeta en móvil, dos o tres en portátil y cuatro o cinco en pantalla amplia.
+- Agenda docente con lista y calendario recurrente.
+- Dashboard de reportes y detección de cruces de horario.
+- Sugerencia y reasignación manual de un aula alternativa cuando existe disponibilidad.
 
-## Arquitectura Técnica
+### Programación e información institucional
 
-### Stack Tecnológico
-- **Backend:** Django 6.0.4 (Python)
-- **Frontend:** HTML5, Bootstrap 5.3.7, JavaScript
-- **Base de Datos:** SQLite (desarrollo), PostgreSQL (producción)
-- **Deploy:** Render.com
-- **Librerías Principales:**
-  - openpyxl (manejo de Excel)
-  - FullCalendar (calendario interactivo)
-  - Chart.js (gráficos)
-  - Bootstrap Icons (iconos)
+- Importación de Excel con mapeo flexible de encabezados.
+- Creación controlada de sedes, edificios, aulas y docentes que no existen aún en el catálogo.
+- Validación de formatos de hora y omisión de filas inválidas, conservando la programación anterior si no hay clases válidas para importar.
+- Plantilla de Excel descargable.
+- Historial de importaciones y restauración de una programación previa.
 
-### Estructura del Proyecto
-```
+### Acceso y separación por institución
+
+- Roles: administrador institucional, programador académico y consulta.
+- Restricción de acciones sensibles por rol: usuarios, importación y reasignación.
+- Asociación de cada usuario con una institución.
+- Aislamiento lógico de consultas por institución mediante middleware y `ContextVar`.
+- Autenticación requerida en el entorno de piloto de Render.
+
+### Plataforma actual
+
+- Django 6, PostgreSQL en producción y SQLite para desarrollo local.
+- Render Blueprint con despliegue desde `main`.
+- WhiteNoise para estáticos de producción.
+- Índices de base de datos para búsquedas frecuentes de clases por aula, docente, día y horario.
+
+## Lo que no debemos presentar como terminado
+
+Estos puntos son importantes porque una documentación honesta evita ofrecer a una institución una capacidad que todavía no existe.
+
+| Área | Estado real | Decisión |
+| --- | --- | --- |
+| Mapa interactivo | Hay una ruta y un prototipo SVG, pero el código de mapa aún conserva referencias de un modelo anterior de planos. No existe un flujo institucional para subir, calibrar y publicar planos reales. | Mantenerlo fuera de la promesa comercial hasta reconstruirlo como módulo independiente. |
+| Alta autoservicio de instituciones | La separación lógica existe, pero la creación de una nueva institución, su dominio, su administrador y su catálogo no es un flujo de producto. | Construir aprovisionamiento de tenants antes de abrir el servicio a varias instituciones. |
+| Importación para operación masiva | La carga funciona y conserva respaldo; aún no ofrece vista previa, conciliación de cambios, reporte descargable ni aprobación explícita antes de reemplazar una programación. | Es el siguiente frente funcional prioritario. |
+| Catálogo de espacios | Se puede completar desde la importación o el admin de Django, pero no hay gestión institucional completa en la interfaz. | Crear administración de sedes, edificios, aulas, capacidad y recursos. |
+| Seguridad SaaS | Hay autenticación, roles, CSRF, HTTPS y cookies seguras en producción. Faltan límites de intentos, restablecimiento de contraseña, 2FA, auditoría de eventos, política de sesiones y revisión de permisos por funcionalidad. | Endurecer antes de una venta o apertura general. |
+| Operación | El despliegue y las migraciones están automatizados, pero faltan salud pública, alertas, monitoreo, trazas, política de respaldo y recuperación documentada. | Establecer una línea base operativa antes de depender de SIGEA a diario. |
+| Integraciones | No hay API pública versionada, SSO institucional, correo transaccional ni colas de trabajo. | Postergar hasta tener el núcleo validado y repetible. |
+| Facturación y planes | No existen suscripciones, límites de uso, facturación ni entitlements. | Diseñar después de validar propuesta de valor y disposición de pago. |
+
+## Arquitectura actual
+
+```text
 planimetria/
-├── planimetria/          # Configuración principal de Django
-│   ├── settings.py      # Configuración del proyecto
-│   ├── urls.py          # URLs principales
-│   └── wsgi.py          # Configuración WSGI
-├── proyectos/           # Aplicación principal
-│   ├── models.py        # Modelos de datos
-│   ├── views.py         # Vistas y lógica de negocio
-│   ├── urls.py          # URLs de la aplicación
-│   ├── templates/       # Plantillas HTML
-│   ├── services/        # Lógica de servicios
-│   │   ├── excel_importer.py  # Importación de Excel
-│   │   ├── mappers.py         # Mapeo de columnas
-│   │   ├── validators.py      # Validación de datos
-│   │   └── asignador_aulas.py # Asignación inteligente
-│   ├── middleware.py   # Middleware de autenticación
-│   └── management/      # Comandos de gestión
-├── static/              # Archivos estáticos
-│   ├── css/            # Estilos personalizados
-│   └── js/             # JavaScript
-├── media/              # Archivos multimedia
-└── requirements.txt    # Dependencias de Python
+├── planimetria/                 # Configuración Django, URLs y WSGI/ASGI
+├── proyectos/                   # Aplicación principal de SIGEA
+│   ├── models.py                # Instituciones, usuarios, espacios, clases e importaciones
+│   ├── middleware.py            # Resolución y acceso por institución
+│   ├── role_middleware.py       # Restricciones por rol
+│   ├── services/                # Importación, validación, respaldo y asignación
+│   ├── templates/               # Interfaz web actual
+│   ├── management/commands/     # Bootstrap y tareas administrativas
+│   └── tests.py                 # Pruebas de núcleo y piloto
+├── static/                      # CSS y JavaScript compartidos
+├── render.yaml                  # Despliegue del piloto
+└── requirements.txt
 ```
 
-### Modelos de Datos Principales
+El modelo de datos vigente cubre `Institucion`, `PerfilUsuario`, `Sede`, `Edificio`, `Aula`, `Docente`, `PeriodoAcademico`, `MomentoAcademico`, `Clase` e `ImportacionProgramacion`.
 
-**Institución**
-- Multi-tenancy por subdominio
-- Configuración de horarios de jornada
-- Gestión de sedes y edificios
+## Arquitectura objetivo para SaaS
 
-**Sede, Edificio, Aula**
-- Estructura jerárquica de espacios
-- Metadatos de capacidad y tipo
-- Recursos disponibles
+No se debe reescribir SIGEA ahora. La evolución recomendada es separar responsabilidades gradualmente, conservando los modelos y las funcionalidades que ya funcionan.
 
-**Docente**
-- Información personal y contacto
-- Asociación con clases
+```text
+config/
+├── settings/
+│   ├── base.py                  # Ajustes compartidos
+│   ├── development.py            # Desarrollo local
+│   ├── test.py                   # Pruebas
+│   └── production.py             # Seguridad y operación de producción
+apps/
+├── tenants/                     # Instituciones, dominios, membresías y aprovisionamiento
+├── identities/                  # Roles, sesiones, recuperación y SSO futuro
+├── spaces/                      # Sedes, edificios, aulas, recursos y catálogo
+├── scheduling/                  # Periodos, clases, disponibilidad y conflictos
+├── imports/                     # Plantillas, previsualización, validación e historial
+├── analytics/                   # Métricas y exportaciones
+├── audit/                       # Eventos y trazabilidad
+└── maps/                        # Planos y navegación, solo cuando el núcleo esté estable
+api/
+└── v1/                          # Contratos versionados para integraciones futuras
+tests/
+├── unit/
+├── integration/
+└── e2e/
+```
 
-**Clase**
-- Programación académica
-- Horarios y asignación de aulas
-- Periodo académico
+Esta estructura es una meta de organización, no una tarea de migración masiva. Cada módulo debe extraerse únicamente cuando el siguiente incremento lo requiera.
 
-**ImportaciónProgramación**
-- Historial de importaciones
-- Respaldos de programación
+## Hoja de ruta hacia SaaS
 
-## Instalación y Configuración
+### Fase 0 — Consolidar el piloto
 
-### Requisitos Previos
-- Python 3.8+
-- pip (gestor de paquetes de Python)
-- Git (para control de versiones)
+**Objetivo:** que una institución pueda operar un periodo académico completo sin depender de intervención técnica.
 
-### Instalación Local
+1. Corregir los detalles de experiencia detectados en las pruebas reales: codificación de textos, responsive, mensajes de error y rutas incompletas.
+2. Terminar la importación segura:
+   - previsualización antes de aplicar;
+   - total de filas válidas, inválidas y cambios esperados;
+   - reporte descargable de errores;
+   - confirmación explícita para reemplazar la programación;
+   - conciliación de aulas y docentes creados automáticamente.
+3. Convertir el catálogo de espacios en una pantalla institucional: capacidad, tipo, recursos, sede y edificio.
+4. Definir una prueba de aceptación con la institución piloto y ejecutar una importación de un periodo real en un entorno de prueba.
+5. Mantener el mapa fuera de navegación activa hasta que los modelos, el almacenamiento de planos y la interfaz estén alineados.
+
+**Criterio de salida:** una persona administrativa completa una carga, interpreta el resultado, consulta disponibilidad y revierte una carga sin ayuda técnica.
+
+### Fase 1 — Base operativa SaaS
+
+**Objetivo:** soportar varias instituciones sin mezclar datos ni depender de operaciones manuales peligrosas.
+
+1. Separar ajustes de Django para desarrollo, pruebas y producción.
+2. Crear aprovisionamiento de institución: nombre, subdominio o dominio, administrador inicial, jornada, plan y estado.
+3. Formalizar membresías y permisos por funcionalidad; evitar que la seguridad dependa solo de rutas.
+4. Añadir auditoría inmutable de accesos, importaciones, restauraciones, altas de usuarios y reasignaciones.
+5. Agregar endpoint de salud, registro estructurado, alertas de error, monitoreo de disponibilidad y política de respaldo/restauración.
+6. Mover archivos institucionales y futuros planos a almacenamiento de objetos; los archivos locales no son una base SaaS confiable.
+7. Incluir límites de carga, control de tasa de inicio de sesión y recuperación de contraseña por correo.
+
+**Criterio de salida:** se pueden crear dos instituciones, cada una con sus usuarios y datos aislados, monitorear el servicio y recuperar información documentadamente.
+
+### Fase 2 — Producto repetible
+
+**Objetivo:** que SIGEA se pueda instalar y entender sin acompañamiento constante del equipo técnico.
+
+1. Asistente de bienvenida con carga inicial de catálogo y plantilla de programación.
+2. Centro de importaciones con estado, validación, historial y restauración.
+3. Reportes de ocupación y conflictos que respondan preguntas operativas concretas.
+4. Exportación de reportes y criterios de negocio por capacidad, tipo de aula y recursos requeridos.
+5. Pruebas de navegador para los flujos críticos: inicio de sesión, importación, filtros, conflictos, roles y restauración.
+6. Manual breve para administrador institucional y canal de soporte para el piloto.
+
+**Criterio de salida:** una segunda institución puede configurarse, capacitarse y completar el flujo principal con documentación.
+
+### Fase 3 — Comercialización controlada
+
+**Objetivo:** convertir el piloto repetible en un servicio comercial.
+
+1. Definir planes según número de espacios, usuarios, sedes o volumen de importaciones.
+2. Implementar entitlements antes de integrar cobro: qué puede usar cada plan y cuáles son sus límites.
+3. Preparar facturación, términos del servicio, tratamiento de datos, acuerdos de soporte y proceso de baja/exportación de datos.
+4. Agregar dominios personalizados y SSO institucional solo cuando existan clientes que lo requieran.
+5. Establecer métricas de disponibilidad, tiempos de respuesta, respaldo y soporte acordes al plan contratado.
+
+**Criterio de salida:** cada institución conoce su plan, límites, responsable de datos, canal de soporte y proceso de contratación.
+
+### Fase 4 — Diferenciadores, después de validar el núcleo
+
+- Mapa de planos institucionales con carga, calibración y publicación por edificio.
+- Reservas de auditorios, laboratorios u otros recursos compartidos.
+- API versionada para integraciones académicas.
+- SSO, 2FA y automatizaciones avanzadas.
+- Analítica predictiva solo cuando exista suficiente historial confiable.
+
+## Por dónde empezar ahora
+
+La prioridad recomendada para el próximo incremento es **la previsualización y conciliación de importación Excel**.
+
+Es la puerta de entrada de los datos que alimentan disponibilidad, agenda, conflictos y reportes. Si ese flujo es confiable, una institución puede probar SIGEA de verdad; si falla, ninguna mejora visual o de mapa compensará la desconfianza en la información.
+
+Orden de trabajo sugerido:
+
+1. Recopilar el Excel real de la institución piloto y acordar una plantilla canónica.
+2. Diseñar una pantalla de previsualización: filas válidas, errores, aulas nuevas, docentes nuevos y resumen de cambios.
+3. Aplicar cambios solo tras confirmación del programador académico.
+4. Generar un reporte de resultado descargable y conservar el respaldo actual.
+5. Ejecutar una prueba de aceptación con el administrativo de la institución.
+6. Después, construir la administración de catálogo de espacios.
+
+## Métricas para decidir si SIGEA avanza
+
+Durante el piloto se deben medir hechos, no solo impresiones:
+
+- Tiempo de una importación hasta una programación utilizable.
+- Porcentaje de filas válidas en la primera carga y causas frecuentes de error.
+- Exactitud percibida de la disponibilidad frente a la programación oficial.
+- Número de conflictos encontrados y resueltos.
+- Tiempo que toma encontrar un espacio disponible.
+- Usuarios activos por rol y frecuencia de uso semanal.
+- Incidencias de soporte, tiempo de respuesta y restauraciones necesarias.
+- Instituciones que completarían una segunda carga sin acompañamiento.
+
+Si estas métricas mejoran y al menos dos instituciones recorren el flujo completo con datos aislados, SIGEA tendrá evidencia real para pasar de piloto a producto SaaS.
+
+## Operación local
 
 ```bash
-# Clonar el repositorio
-git clone https://github.com/jimartinezcarreno-arch/sigea-pilot.git
-cd sigea-pilot
-
-# Crear entorno virtual
 python -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
+# Windows
+venv\Scripts\activate
 
-# Instalar dependencias
 pip install -r requirements.txt
-
-# Configurar base de datos
 python manage.py migrate
-
-# Crear superusuario
-python manage.py createsuperuser
-
-# Ejecutar servidor local
+python manage.py bootstrap_pilot
 python manage.py runserver
 ```
 
-### Configuración de Variables de Entorno
+Antes de enviar cambios:
 
 ```bash
-# Configuración de producción
-DEBUG=False
-DJANGO_SECRET_KEY=tu_clave_secreta
-ALLOWED_HOSTS=tu_dominio.com
-DATABASE_URL=postgresql://usuario:password@host/db
-REQUIRE_LOGIN=True
-DEFAULT_TENANT_SUBDOMAIN=sigea
-PILOT_INSTITUTION_NAME=SIGEA Pilot
+python manage.py check
+python manage.py test proyectos
 ```
 
-### Deploy en Render
+Las variables locales de referencia están en [`.env.example`](.env.example). Las credenciales y valores de producción deben configurarse exclusivamente como variables seguras del proveedor de despliegue.
 
-1. **Conectar repositorio** en dashboard de Render
-2. **Configurar servicio web** con `render.yaml`
-3. **Configurar base de datos** PostgreSQL
-4. **Establecer variables de entorno**
-5. **Deploy automático** al hacer push
+## Principios de desarrollo
 
-## Uso del Sistema
-
-### Consulta de Disponibilidad
-
-1. **Acceder al dashboard** principal
-2. **Seleccionar filtros** (sede, edificio, aula, docente, hora)
-3. **Visualizar estado** de cada aula (libre/ocupada)
-4. **Usar filtros rápidos** para ver solo espacios libres u ocupados
-5. **Ver detalles** de horarios y tiempo libre
-
-### Importación de Programación
-
-1. **Preparar archivo Excel** con columnas requeridas:
-   - NRC, Asignatura, Docente
-   - Sede, Edificio, Aula,
-   - Hora Inicio, Hora Fin
-   - Días de la semana (L-V)
-
-2. **Subir archivo** desde el dashboard
-3. **Revisar mensajes** de validación
-4. **Verificar resultados** de importación
-
-### Gestión de Conflictos
-
-1. **Acceder a reporte de conflictos**
-2. **Ver superposiciones** detectadas
-3. **Seleccionar aula alternativa** sugerida
-4. **Confirmar reasignación**
-
-### Agenda Docente
-
-1. **Buscar docente** por nombre
-2. **Ver calendario** con sus clases
-3. **Filtrar por periodo** si es necesario
-4. **Consultar detalles** de cada clase
-
-## Funcionalidades Específicas Implementadas
-
-### Filtros Rápidos de Espacios
-- **Tarjetas de filtro** en dashboard superior
-- **Click para filtrar** espacios libres/ocupados
-- **Agrupación automática** sin espacios vacíos
-- **Click en "Mostrar todos"** para resetear filtros
-
-### Sistema Multi-Tenant
-- **Detección por subdominio** (ej: colegio.sigea.com)
-- **Aislamiento de datos** por institución
-- **Configuración independiente** por tenant
-- **Middleware de acceso** personalizado
-
-### Importación Robusta de Excel
-- **Mapeo flexible** de columnas (sinónimos)
-- **Validación de formato** de horas
-- **Creación automática** de estructura faltante
-- **Logging detallado** para depuración
-- **Manejo de errores** con mensajes claros
-
-### Diseño Responsivo
-- **Adaptación móvil** de dashboard
-- **Tarjetas informativas** con información clave
-- **Colores semánticos** (verde=libre, rojo=ocupado)
-- **Tipografía moderna** con Inter font
-- **Animaciones suaves** de transiciones
-
-### Seguridad
-- **Autenticación requerida** en producción
-- **Protección CSRF** en formularios
-- **Validación de entrada** de datos
-- **Sanitización de archivos** subidos
-- **HTTPS obligatorio** en producción
-
-## Tecnologías y Librerías
-
-### Backend
-- **Django 6.0.4** - Framework web
-- **openpyxl** - Manejo de Excel
-- **dj-database-url** - Configuración de base de datos
-- **whitenoise** - Servir archivos estáticos
-- **gunicorn** - Servidor WSGI
-
-### Frontend
-- **Bootstrap 5.3.7** - Framework CSS
-- **Bootstrap Icons 1.11.3** - Iconos
-- **FullCalendar 6.1.21** - Calendario interactivo
-- **Chart.js** - Gráficos y visualizaciones
-- **Inter Font** - Tipografía Google Fonts
-
-### Herramientas de Desarrollo
-- **Git** - Control de versiones
-- **Render.com** - Plataforma de deploy
-- **PostgreSQL** - Base de datos producción
-
-## Estado Actual del Proyecto (Julio 2026)
-
-### Visión SIGEA 2.0
-
-**SIGEA Core:** Sistema Inteligente de Gestión de Espacios Académicos
-- Enfoque: Gestión de aulas, horarios, disponibilidad, optimización de infraestructura
-- Mercado: Colegios, universidades, institutos técnicos
-
-**SIGEA School:** Complemento educativo opcional
-- Enfoque: Gestión de estudiantes, calificaciones, matrículas, asistencia
-- Mercado: Colegios que requieren gestión académica integral
-
-### Funcionalidades Completadas ✅
-- **Dashboard de módulos** como página de inicio post-login
-- **Consulta de aulas** con filtrado y estado en tiempo real
-- **Sistema de autenticación** completo con roles
-- **Importación de Excel** robusta con manejo de errores mejorado
-- **Agenda docente** interactiva
-- **Dashboard de reportes** y métricas
-- **Sistema de detección** de conflictos
-- **Diseño responsivo** optimizado para todos los dispositivos
-- **Multi-tenancy** por institución
-- **Deploy automatizado** en Render
-
-### Correcciones Recientes (Julio 2026)
-- **Importación Excel:** Estrategia mejorada para omitir filas con errores en lugar de cancelar toda la importación
-- **Dashboard de Módulos:** Conversión a HTML completo sin herencia de templates
-- **Responsive Dashboard:** Implementación de media queries para móviles, tablets y desktop
-- **Limpieza de proyecto:** Eliminación de archivos innecesarios y scripts de prueba
-
-### Limitaciones Conocidas
-- **Mapa interactivo:** Pendiente de implementación con funcionalidades de navegación y evacuación
-- **Offline-first:** Pendiente para colegios rurales
-- **Asistencia QR:** Pendiente para confirmar presencia docente
-- **2FA:** Pendiente para máxima seguridad
-- **OAuth institucional:** Pendiente para login con Google/Microsoft
-
-### Roadmap SIGEA 2.0
-
-#### Fase 1: Solidificar Core SIGEA
-1. **Mejorar gestión de espacios existente**
-   - Optimizar filtros de búsqueda
-   - Mejorar detección de conflictos
-   - Dashboard de métricas de ocupación
-
-2. **Mapa Interactivo (Prioridad Alta)**
-   - Navegación básica con rutas óptimas
-   - Ocupación en tiempo real
-   - Importación de planos
-   - Rutas de evacuación
-
-3. **Offline-First Básico**
-   - Service Workers para caché
-   - IndexedDB para almacenamiento local
-   - Modo lectura offline
-   - Sincronización automática
-
-4. **2FA (Autenticación de Dos Factores)**
-   - Google Authenticator
-   - SMS como alternativa
-   - Configuración por usuario
-
-5. **Auditoría Completa**
-   - Registro de LOGIN/LOGOUT
-   - Registro de consultas
-   - IP address y user agent
-   - Reportes de actividad
-
-#### Fase 2: Extensiones Estratégicas
-1. **Asistencia QR Simple**
-   - Generación de QR por aula
-   - Escaneo por docente
-   - Registro de presencia
-   - Reportes de asistencia
-
-2. **Tablón de Anuncios**
-   - Publicación por institución
-   - Prioridad y audiencia
-   - Notificaciones push
-
-3. **API REST Básica**
-   - Endpoints principales
-   - Autenticación JWT
-   - Documentación Swagger
-
-4. **Reportes Avanzados**
-   - Exportación PDF/Excel
-   - Filtros temporales
-   - Gráficos mejorados
-
-5. **OAuth Institucional (Google/Microsoft)**
-   - Login con credenciales institucionales
-   - Verificación de dominio
-   - SSO con otros servicios
-
-#### Fase 3: Opcionales (Solo si hay demanda)
-1. **Módulo Financiero**
-   - Gestión de pagos estudiantes
-   - Facturación básica
-
-2. **Integración SIMAT**
-   - Exportación compatible con Ministerio Educación
-
-### SIGEA School (Complemento Opcional)
-
-#### Módulos
-1. Gestión de Estudiantes
-2. Matrículas
-3. Calificaciones y Boletines
-4. Asistencia Estudiantil
-5. Comunicación
-6. Dashboard Educativo
-
-## Soporte y Mantenimiento
-
-### Logs y Monitoreo
-- **Logs de importación** detallados en `excel_importer.py`
-- **Logs de autenticación** en middleware
-- **Logs de errores** disponibles en Render dashboard
-
-### Respaldo de Datos
-- **Respaldo automático** antes de cada importación
-- **Historial de importaciones** en base de datos
-- **Posibilidad de revertir** cambios
-
-### Actualizaciones
-- **Deploy continuo** vía Git push
-- **Migraciones automáticas** en cada deploy
-- **Colección de archivos estáticos** automatizada
-
-## Contacto y Contribución
-
-**Desarrollado para:** Gestión eficiente de espacios académicos en instituciones educativas
-
-**Versión Actual:** 2.0 (Roadmap definido, implementación en progreso)
-
-**Estado:** Activo para pruebas institucionales con autenticación
-
-**Última actualización:** Julio 2026
-
-**Cambios recientes:**
-- Definición de roadmap SIGEA 2.0
-- Visión SIGEA Core + SIGEA School
-- Documentación de requerimientos actualizada
-- Limpieza de archivos innecesarios del proyecto
-
-**Documentación adicional:**
-- `SIGEA_2.0_Requirements.md` - Roadmap detallado de SIGEA 2.0
-- `VALIDACION_REQUERIMIENTOS.md` - Requerimientos originales del proyecto
+1. Una institución nunca debe leer ni modificar datos de otra.
+2. Ninguna importación debe destruir información sin respaldo, revisión y trazabilidad.
+3. Cada funcionalidad nueva debe resolver un problema medible de gestión de espacios.
+4. La simplicidad operativa vale más que una función llamativa sin adopción.
+5. Todo flujo crítico necesita pruebas automatizadas y una prueba manual de aceptación.
 
 ---
 
-*Documentación generada automáticamente basada en el estado actual del proyecto*
+- **Producto:** SIGEA Core
+- **Estado:** piloto institucional en consolidación
+- **Última validación documental:** 28 de julio de 2026
