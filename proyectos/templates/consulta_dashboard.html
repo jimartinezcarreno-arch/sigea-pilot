@@ -241,9 +241,9 @@ Importar Excel
     <i class="bi bi-exclamation-triangle-fill"></i> Conflictos de Horarios
 </a>
 
-<a href="{% url 'mapa_interactivo' %}" class="btn btn-outline-success w-100 mb-2" style="text-align: left; font-size: 0.85rem;" title="Ver mapa interactivo">
-    <i class="bi bi-geo-alt-fill"></i> Mapa Interactivo
-</a>
+<button type="button" class="btn btn-outline-secondary w-100 mb-2" style="text-align: left; font-size: 0.85rem;" disabled aria-disabled="true" title="Próximamente">
+    <i class="bi bi-geo-alt-fill"></i> Mapa Interactivo (próximamente)
+</button>
 
 {% if sigea_access.can_administrar %}
 <a href="{% url 'gestionar_usuarios' %}" class="btn btn-outline-dark w-100 mb-2" style="text-align: left; font-size: 0.85rem;">

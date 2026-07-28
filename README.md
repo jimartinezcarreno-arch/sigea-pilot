@@ -30,6 +30,7 @@ Las pruebas actuales cubren aislamiento básico entre instituciones, roles, agen
 
 - Consulta de aulas por sede, edificio, aula, docente y hora.
 - Estado libre u ocupado, próxima clase y programación asociada a cada espacio.
+- Cálculo base de disponibilidad; la ventana "libre hasta la próxima clase" se terminará de precisar en la Fase 0 para que refleje el tiempo realmente utilizable del espacio.
 - Filtros rápidos y cuadrícula responsiva: una tarjeta en móvil, dos o tres en portátil y cuatro o cinco en pantalla amplia.
 - Agenda docente con lista y calendario recurrente.
 - Dashboard de reportes y detección de cruces de horario.
@@ -40,12 +41,13 @@ Las pruebas actuales cubren aislamiento básico entre instituciones, roles, agen
 - Importación de Excel con mapeo flexible de encabezados.
 - Creación controlada de sedes, edificios, aulas y docentes que no existen aún en el catálogo.
 - Validación de formatos de hora y omisión de filas inválidas, conservando la programación anterior si no hay clases válidas para importar.
-- Plantilla de Excel descargable.
+- Plantilla de Excel descargable; su estandarización versionada para colegios e instituciones de educación superior sigue pendiente.
 - Historial de importaciones y restauración de una programación previa.
 
 ### Acceso y separación por institución
 
-- Roles: administrador institucional, programador académico y consulta.
+- Roles: administrador institucional, programador académico y consulta; están validados para el piloto actual.
+- No se ampliarán roles hasta que el uso del piloto demuestre una necesidad concreta.
 - Restricción de acciones sensibles por rol: usuarios, importación y reasignación.
 - Asociación de cada usuario con una institución.
 - Aislamiento lógico de consultas por institución mediante middleware y `ContextVar`.
@@ -54,9 +56,13 @@ Las pruebas actuales cubren aislamiento básico entre instituciones, roles, agen
 ### Plataforma actual
 
 - Django 6, PostgreSQL en producción y SQLite para desarrollo local.
-- Render Blueprint con despliegue desde `main`.
+- Render Blueprint con despliegue desde `main`, usado como plataforma de piloto.
 - WhiteNoise para estáticos de producción.
 - Índices de base de datos para búsquedas frecuentes de clases por aula, docente, día y horario.
+
+### Decisión de plataforma pendiente
+
+Django y PostgreSQL se mantienen como la base tecnológica de SIGEA. Render seguirá siendo la plataforma del piloto mientras se valida el producto. Antes de contratar clientes se evaluará, con costos y necesidades reales, el proveedor definitivo para aplicación web, base de datos administrada, almacenamiento de archivos, correo transaccional, monitoreo y respaldos. No se justifica una migración de infraestructura antes de esa evidencia.
 
 ## Lo que no debemos presentar como terminado
 
@@ -64,14 +70,25 @@ Estos puntos son importantes porque una documentación honesta evita ofrecer a u
 
 | Área | Estado real | Decisión |
 | --- | --- | --- |
-| Mapa interactivo | Hay una ruta y un prototipo SVG, pero el código de mapa aún conserva referencias de un modelo anterior de planos. No existe un flujo institucional para subir, calibrar y publicar planos reales. | Mantenerlo fuera de la promesa comercial hasta reconstruirlo como módulo independiente. |
+| Mapa interactivo | Está deshabilitado en la navegación. El prototipo anterior no forma parte del producto y no existe un flujo institucional para subir, calibrar y publicar planos reales. | Reconstruirlo desde cero como módulo independiente, después de consolidar el núcleo. |
 | Alta autoservicio de instituciones | La separación lógica existe, pero la creación de una nueva institución, su dominio, su administrador y su catálogo no es un flujo de producto. | Construir aprovisionamiento de tenants antes de abrir el servicio a varias instituciones. |
-| Importación para operación masiva | La carga funciona y conserva respaldo; aún no ofrece vista previa, conciliación de cambios, reporte descargable ni aprobación explícita antes de reemplazar una programación. | Es el siguiente frente funcional prioritario. |
-| Catálogo de espacios | Se puede completar desde la importación o el admin de Django, pero no hay gestión institucional completa en la interfaz. | Crear administración de sedes, edificios, aulas, capacidad y recursos. |
+| Importación para operación masiva | La carga funciona y conserva respaldo; aún no ofrece vista previa, conciliación de cambios, reporte descargable, plantilla canónica ni aprobación explícita antes de reemplazar una programación. | Es el siguiente frente funcional prioritario. La limpieza debe ser una sustitución confirmada y reversible, nunca un borrado global sin respaldo. |
+| Catálogo de espacios | Se puede completar desde la importación o el admin de Django, pero no hay gestión institucional completa en la interfaz ni tipos configurables por institución. | Crear un catálogo administrable de espacios, capacidad, recursos, accesibilidad y horarios. |
 | Seguridad SaaS | Hay autenticación, roles, CSRF, HTTPS y cookies seguras en producción. Faltan límites de intentos, restablecimiento de contraseña, 2FA, auditoría de eventos, política de sesiones y revisión de permisos por funcionalidad. | Endurecer antes de una venta o apertura general. |
 | Operación | El despliegue y las migraciones están automatizados, pero faltan salud pública, alertas, monitoreo, trazas, política de respaldo y recuperación documentada. | Establecer una línea base operativa antes de depender de SIGEA a diario. |
 | Integraciones | No hay API pública versionada, SSO institucional, correo transaccional ni colas de trabajo. | Postergar hasta tener el núcleo validado y repetible. |
 | Facturación y planes | No existen suscripciones, límites de uso, facturación ni entitlements. | Diseñar después de validar propuesta de valor y disposición de pago. |
+
+### Catálogo de espacios que SIGEA debe administrar
+
+SIGEA no debe limitarse a salones convencionales. El catálogo deberá permitir que cada institución active únicamente los tipos que utiliza:
+
+- Aula regular, laboratorio, sala de informática y aula híbrida.
+- Auditorio, sala de reuniones, sala de estudio y sala de docentes.
+- Biblioteca, espacio de bienestar y espacios deportivos reservables.
+- Recurso virtual sincronizado, cuando se programe como un espacio disponible.
+
+Todos comparten una ficha mínima: código o nombre, sede, edificio, capacidad, tipo, recursos, accesibilidad, horario disponible, estado operativo y observaciones. Los tipos deben ser configurables por institución; no se deben imponer módulos de cafetería, oficinas u otros espacios que una institución no gestione con SIGEA.
 
 ## Arquitectura actual
 
@@ -130,15 +147,21 @@ Esta estructura es una meta de organización, no una tarea de migración masiva.
 **Objetivo:** que una institución pueda operar un periodo académico completo sin depender de intervención técnica.
 
 1. Corregir los detalles de experiencia detectados en las pruebas reales: codificación de textos, responsive, mensajes de error y rutas incompletas.
-2. Terminar la importación segura:
+2. Completar la regla de disponibilidad útil:
+   - cuando una clase termina, mostrar el intervalo real hasta la siguiente, por ejemplo: `Libre por los próximos 45 min`;
+   - si una clase está en curso, diferenciar claramente entre "ocupada hasta" y el siguiente intervalo libre;
+   - considerar la siguiente clase del mismo día para que la información sea accionable.
+3. Terminar la importación segura:
    - previsualización antes de aplicar;
    - total de filas válidas, inválidas y cambios esperados;
    - reporte descargable de errores;
    - confirmación explícita para reemplazar la programación;
    - conciliación de aulas y docentes creados automáticamente.
-3. Convertir el catálogo de espacios en una pantalla institucional: capacidad, tipo, recursos, sede y edificio.
-4. Definir una prueba de aceptación con la institución piloto y ejecutar una importación de un periodo real en un entorno de prueba.
-5. Mantener el mapa fuera de navegación activa hasta que los modelos, el almacenamiento de planos y la interfaz estén alineados.
+   - plantilla canónica, versionada y compatible con colegios e instituciones de educación superior;
+   - reemplazo o limpieza únicamente de la programación seleccionada, con confirmación, respaldo y restauración.
+4. Convertir el catálogo de espacios en una pantalla institucional: capacidad, tipo, recursos, accesibilidad, sede y edificio.
+5. Definir una prueba de aceptación con la institución piloto y ejecutar una importación de un periodo real en un entorno de prueba.
+6. Mantener el mapa deshabilitado y reconstruirlo desde cero solamente después de consolidar el núcleo.
 
 **Criterio de salida:** una persona administrativa completa una carga, interpreta el resultado, consulta disponibilidad y revierte una carga sin ayuda técnica.
 
@@ -147,12 +170,13 @@ Esta estructura es una meta de organización, no una tarea de migración masiva.
 **Objetivo:** soportar varias instituciones sin mezclar datos ni depender de operaciones manuales peligrosas.
 
 1. Separar ajustes de Django para desarrollo, pruebas y producción.
-2. Crear aprovisionamiento de institución: nombre, subdominio o dominio, administrador inicial, jornada, plan y estado.
-3. Formalizar membresías y permisos por funcionalidad; evitar que la seguridad dependa solo de rutas.
-4. Añadir auditoría inmutable de accesos, importaciones, restauraciones, altas de usuarios y reasignaciones.
-5. Agregar endpoint de salud, registro estructurado, alertas de error, monitoreo de disponibilidad y política de respaldo/restauración.
-6. Mover archivos institucionales y futuros planos a almacenamiento de objetos; los archivos locales no son una base SaaS confiable.
-7. Incluir límites de carga, control de tasa de inicio de sesión y recuperación de contraseña por correo.
+2. Evaluar y documentar la plataforma final de aplicación, base de datos, archivos, correo, monitoreo y respaldo; conservar Render mientras sea adecuado para el piloto.
+3. Crear aprovisionamiento de institución: nombre, subdominio o dominio, administrador inicial, jornada, plan y estado.
+4. Formalizar membresías y permisos por funcionalidad; evitar que la seguridad dependa solo de rutas.
+5. Añadir auditoría inmutable de accesos, importaciones, restauraciones, altas de usuarios y reasignaciones.
+6. Agregar endpoint de salud, registro estructurado, alertas de error, monitoreo de disponibilidad y política de respaldo/restauración.
+7. Mover archivos institucionales y futuros planos a almacenamiento de objetos; los archivos locales no son una base SaaS confiable.
+8. Incluir límites de carga, control de tasa de inicio de sesión y recuperación de contraseña por correo.
 
 **Criterio de salida:** se pueden crear dos instituciones, cada una con sus usuarios y datos aislados, monitorear el servicio y recuperar información documentadamente.
 
@@ -197,12 +221,13 @@ Es la puerta de entrada de los datos que alimentan disponibilidad, agenda, confl
 
 Orden de trabajo sugerido:
 
-1. Recopilar el Excel real de la institución piloto y acordar una plantilla canónica.
+1. Recopilar el Excel real de la institución piloto y acordar una plantilla canónica para colegios e instituciones de educación superior.
 2. Diseñar una pantalla de previsualización: filas válidas, errores, aulas nuevas, docentes nuevos y resumen de cambios.
-3. Aplicar cambios solo tras confirmación del programador académico.
+3. Permitir reemplazar o limpiar solo la programación objetivo tras confirmación, respaldo y posibilidad de restauración.
 4. Generar un reporte de resultado descargable y conservar el respaldo actual.
-5. Ejecutar una prueba de aceptación con el administrativo de la institución.
-6. Después, construir la administración de catálogo de espacios.
+5. Completar el mensaje de ventana libre hasta la próxima clase.
+6. Ejecutar una prueba de aceptación con el administrativo de la institución.
+7. Después, construir la administración de catálogo de espacios.
 
 ## Métricas para decidir si SIGEA avanza
 
