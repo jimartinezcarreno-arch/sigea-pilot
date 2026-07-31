@@ -4,7 +4,7 @@
 
 SIGEA ayuda a una institución a cargar su programación académica, consultar la disponibilidad de sus espacios y resolver conflictos de horario con una única fuente de información. El producto se concentra en **espacios, programación y ocupación**; cualquier módulo ajeno a ese núcleo queda fuera de este repositorio y de esta hoja de ruta.
 
-## Estado, validado el 28 de julio de 2026
+## Estado, validado el 31 de julio de 2026
 
 **SIGEA es hoy un piloto institucional funcional con base multi-institución.** Está listo para seguir validándose con instituciones reales bajo acompañamiento. Aún no es un SaaS comercial listo para vender de forma autoservicio: faltan capacidades de operación, seguridad, aprovisionamiento y producto que permiten atender muchas instituciones de forma confiable.
 
@@ -18,7 +18,7 @@ La distinción es deliberada:
 ### Verificaciones realizadas
 
 - `python manage.py check`: sin incidencias.
-- `python manage.py test proyectos`: **12 pruebas aprobadas**.
+- `python manage.py test proyectos`: **16 pruebas aprobadas**.
 - Despliegue configurado en Render con PostgreSQL, migraciones, archivos estáticos y arranque del piloto.
 - Repositorio protegido de secretos, base local, archivos multimedia y Excel mediante `.gitignore`.
 
@@ -38,10 +38,10 @@ Las pruebas actuales cubren aislamiento básico entre instituciones, roles, agen
 
 ### Programación e información institucional
 
-- Importación de Excel con mapeo flexible de encabezados.
+- Importación de Excel en dos pasos: revisión sin cambios y confirmación explícita antes de reemplazar la programación.
 - Creación controlada de sedes, edificios, aulas y docentes que no existen aún en el catálogo.
-- Validación de formatos de hora y omisión de filas inválidas, conservando la programación anterior si no hay clases válidas para importar.
-- Plantilla de Excel descargable; su estandarización versionada para colegios e instituciones de educación superior sigue pendiente.
+- Validación de encabezados, identificador de clase, días y horarios; un archivo con errores no reemplaza parcialmente la programación vigente.
+- Plantilla estándar descargable, con instrucciones y ejemplo; también se aceptan encabezados institucionales frecuentes para facilitar la transición.
 - Historial de importaciones y restauración de una programación previa.
 
 ### Acceso y separación por institución
@@ -72,7 +72,7 @@ Estos puntos son importantes porque una documentación honesta evita ofrecer a u
 | --- | --- | --- |
 | Mapa interactivo | Está deshabilitado en la navegación. El prototipo anterior no forma parte del producto y no existe un flujo institucional para subir, calibrar y publicar planos reales. | Reconstruirlo desde cero como módulo independiente, después de consolidar el núcleo. |
 | Alta autoservicio de instituciones | La separación lógica existe, pero la creación de una nueva institución, su dominio, su administrador y su catálogo no es un flujo de producto. | Construir aprovisionamiento de tenants antes de abrir el servicio a varias instituciones. |
-| Importación para operación masiva | La carga funciona y conserva respaldo; aún no ofrece vista previa, conciliación de cambios, reporte descargable, plantilla canónica ni aprobación explícita antes de reemplazar una programación. | Es el siguiente frente funcional prioritario. La limpieza debe ser una sustitución confirmada y reversible, nunca un borrado global sin respaldo. |
+| Importación para operación masiva | La carga ya revisa el archivo, informa el impacto y exige confirmación antes de sustituir la programación; conserva respaldo y bloquea archivos con errores. Aún faltan reporte descargable de validaciones, conciliación administrable del catálogo y tratamiento de cargas de gran volumen. | Consolidar el flujo con el Excel real de la institución piloto. La limpieza debe ser una sustitución confirmada y reversible, nunca un borrado global sin respaldo. |
 | Catálogo de espacios | Se puede completar desde la importación o el admin de Django, pero no hay gestión institucional completa en la interfaz ni tipos configurables por institución. | Crear un catálogo administrable de espacios, capacidad, recursos, accesibilidad y horarios. |
 | Seguridad SaaS | Hay autenticación, roles, CSRF, HTTPS y cookies seguras en producción. Faltan límites de intentos, restablecimiento de contraseña, 2FA, auditoría de eventos, política de sesiones y revisión de permisos por funcionalidad. | Endurecer antes de una venta o apertura general. |
 | Operación | El despliegue y las migraciones están automatizados, pero faltan salud pública, alertas, monitoreo, trazas, política de respaldo y recuperación documentada. | Establecer una línea base operativa antes de depender de SIGEA a diario. |
@@ -151,14 +151,11 @@ Esta estructura es una meta de organización, no una tarea de migración masiva.
    - cuando una clase termina, mostrar el intervalo real hasta la siguiente, por ejemplo: `Libre por los próximos 45 min`;
    - si una clase está en curso, diferenciar claramente entre "ocupada hasta" y el siguiente intervalo libre;
    - considerar la siguiente clase del mismo día para que la información sea accionable.
-3. Terminar la importación segura:
-   - previsualización antes de aplicar;
-   - total de filas válidas, inválidas y cambios esperados;
-   - reporte descargable de errores;
-   - confirmación explícita para reemplazar la programación;
-   - conciliación de aulas y docentes creados automáticamente.
-   - plantilla canónica, versionada y compatible con colegios e instituciones de educación superior;
-   - reemplazo o limpieza únicamente de la programación seleccionada, con confirmación, respaldo y restauración.
+3. Consolidar la importación segura:
+   - probar la revisión y confirmación con el Excel real de la institución piloto;
+   - agregar reporte descargable de validaciones;
+   - permitir conciliar aulas y docentes creados automáticamente antes de publicarlos;
+   - definir la selección de programación o periodo objetivo cuando una institución conserve más de un periodo.
 4. Convertir el catálogo de espacios en una pantalla institucional: capacidad, tipo, recursos, accesibilidad, sede y edificio.
 5. Definir una prueba de aceptación con la institución piloto y ejecutar una importación de un periodo real en un entorno de prueba.
 6. Mantener el mapa deshabilitado y reconstruirlo desde cero solamente después de consolidar el núcleo.
@@ -215,19 +212,18 @@ Esta estructura es una meta de organización, no una tarea de migración masiva.
 
 ## Por dónde empezar ahora
 
-La prioridad recomendada para el próximo incremento es **la previsualización y conciliación de importación Excel**.
+La prioridad recomendada para el próximo incremento es **validar la importación con el Excel real y completar el catálogo institucional de espacios**.
 
 Es la puerta de entrada de los datos que alimentan disponibilidad, agenda, conflictos y reportes. Si ese flujo es confiable, una institución puede probar SIGEA de verdad; si falla, ninguna mejora visual o de mapa compensará la desconfianza en la información.
 
 Orden de trabajo sugerido:
 
-1. Recopilar el Excel real de la institución piloto y acordar una plantilla canónica para colegios e instituciones de educación superior.
-2. Diseñar una pantalla de previsualización: filas válidas, errores, aulas nuevas, docentes nuevos y resumen de cambios.
-3. Permitir reemplazar o limpiar solo la programación objetivo tras confirmación, respaldo y posibilidad de restauración.
-4. Generar un reporte de resultado descargable y conservar el respaldo actual.
-5. Completar el mensaje de ventana libre hasta la próxima clase.
-6. Ejecutar una prueba de aceptación con el administrativo de la institución.
-7. Después, construir la administración de catálogo de espacios.
+1. Ejecutar una importación de prueba con el Excel real de la institución piloto y contrastar los resultados con su programación oficial.
+2. Generar un reporte descargable de validaciones para facilitar la corrección masiva del archivo.
+3. Permitir completar capacidad, tipo, recursos y accesibilidad de los espacios nuevos detectados en una carga.
+4. Completar el mensaje de ventana libre hasta la próxima clase.
+5. Ejecutar una prueba de aceptación con el administrativo de la institución.
+6. Después, construir la administración institucional del catálogo de espacios.
 
 ## Métricas para decidir si SIGEA avanza
 

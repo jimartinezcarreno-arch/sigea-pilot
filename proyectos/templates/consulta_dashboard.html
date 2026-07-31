@@ -195,6 +195,8 @@ Buscar
 {% if sigea_access.can_programar %}
 <h6>Importar programación</h6>
 
+<p class="small text-secondary mb-2">Primero revisaremos el archivo; la programación solo cambia cuando confirmes el resumen.</p>
+
 <form
 method="POST"
 action="{% url 'subir_programacion_segura' %}"
@@ -214,7 +216,7 @@ class="btn btn-success w-100">
 
 <i class="bi bi-upload"></i>
 
-Importar Excel
+Revisar archivo Excel
 
 </button>
 

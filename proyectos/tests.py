@@ -49,6 +49,26 @@ class SIGEATestCase(TestCase):
         )
         set_current_institucion(None)
 
+    @staticmethod
+    def archivo_programacion(nrc='MAT-2', hora_inicio='0800'):
+        libro = Workbook()
+        hoja = libro.active
+        hoja.append([
+            'PERIODO', 'ID_CLASE', 'ASIGNATURA', 'DOCENTE', 'SEDE', 'EDIFICIO',
+            'ESPACIO', 'HORA_INICIO', 'HORA_FIN', 'LUN', 'MAR', 'MIE', 'JUE',
+            'VIE', 'SAB', 'DOM',
+        ])
+        hoja.append([
+            '2026-2', nrc, 'Álgebra', 'Ana Pérez', 'Sede principal', 'Edificio A',
+            'A-101', hora_inicio, '1000', 'X', '', '', '', '', '', '',
+        ])
+        contenido = BytesIO()
+        libro.save(contenido)
+        return SimpleUploadedFile(
+            'programacion-prueba.xlsx', contenido.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+
     def test_unknown_tenant_cannot_read_tenant_data(self):
         self.assertEqual(Aula.objects.count(), 0)
         respuesta = self.client.get("/", HTTP_HOST="unknown.localhost")
@@ -129,6 +149,46 @@ class SIGEATestCase(TestCase):
         self.assertContains(respuesta, 'Programador académico')
 
     @override_settings(REQUIRE_LOGIN=True)
+    def test_programador_revisa_y_confirma_antes_de_reemplazar_programacion(self):
+        programador = get_user_model().objects.create_user(
+            username='programador-importa', password='ClaveSegura123!'
+        )
+        PerfilUsuario.objects.create(user=programador, institucion=self.inst1, rol='PROGRAMADOR')
+        self.client.force_login(programador)
+
+        respuesta = self.client.post('/subir-excel/', {
+            'archivo_excel': self.archivo_programacion(),
+        }, HTTP_HOST='inst1.localhost')
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, 'REVISIÓN DE PROGRAMACIÓN')
+        self.assertContains(respuesta, 'Confirmar y reemplazar programación')
+        self.assertEqual(Clase.unfiltered.get(institucion=self.inst1).nrc, 'MAT-1')
+        self.assertEqual(ImportacionProgramacion.unfiltered.filter(institucion=self.inst1).count(), 0)
+
+        respuesta = self.client.post('/importaciones/confirmar/', HTTP_HOST='inst1.localhost')
+        self.assertRedirects(respuesta, '/consultar-aulas/')
+        self.assertEqual(Clase.unfiltered.get(institucion=self.inst1).nrc, 'MAT-2')
+        self.assertEqual(ImportacionProgramacion.unfiltered.filter(institucion=self.inst1).count(), 1)
+
+    @override_settings(REQUIRE_LOGIN=True)
+    def test_revision_con_errores_no_reemplaza_la_programacion(self):
+        programador = get_user_model().objects.create_user(
+            username='programador-revision', password='ClaveSegura123!'
+        )
+        PerfilUsuario.objects.create(user=programador, institucion=self.inst1, rol='PROGRAMADOR')
+        self.client.force_login(programador)
+
+        respuesta = self.client.post('/subir-excel/', {
+            'archivo_excel': self.archivo_programacion(hora_inicio='hora-invalida'),
+        }, HTTP_HOST='inst1.localhost')
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, 'No se realizó ningún cambio')
+        self.assertNotContains(respuesta, 'Confirmar y reemplazar programación')
+        self.assertEqual(Clase.unfiltered.get(institucion=self.inst1).nrc, 'MAT-1')
+
+    @override_settings(REQUIRE_LOGIN=True)
     def test_cierre_de_sesion_requiere_post_y_redirige_al_acceso(self):
         user = get_user_model().objects.create_user(username='cerrar-sesion', password='ClaveSegura123!')
         PerfilUsuario.objects.create(user=user, institucion=self.inst1, rol='CONSULTA')
@@ -195,7 +255,10 @@ class SIGEATestCase(TestCase):
         )
         libro = load_workbook(BytesIO(respuesta.content))
         self.assertEqual(libro['Programación']['A1'].value, 'PERIODO')
-        self.assertEqual(libro['Programación']['P1'].value, 'D')
+        self.assertEqual(libro['Programación']['B1'].value, 'ID_CLASE')
+        self.assertEqual(libro['Programación']['P1'].value, 'DOM')
+        self.assertIn('Instrucciones', libro.sheetnames)
+        self.assertIn('Ejemplo', libro.sheetnames)
 
     @override_settings(REQUIRE_LOGIN=True)
     def test_tablero_muestra_herramientas_segun_el_rol(self):
@@ -247,7 +310,7 @@ class ExcelImporterTests(TestCase):
             hora_inicio_jornada=time(6, 0), hora_fin_jornada=time(22, 0),
         )
 
-    def crear_archivo(self, hora_inicio='0800', nrc='NRC-1'):
+    def crear_archivo(self, hora_inicio='0800', nrc='NRC-1', incluir_fila_invalida=False):
         libro = Workbook()
         hoja = libro.active
         hoja.append([
@@ -258,6 +321,11 @@ class ExcelImporterTests(TestCase):
             '202610', nrc, 'Matematicas', 'Ana Perez', 'Sede piloto',
             'Edificio A', 'A-101', hora_inicio, '1000', 'X', '', '', '', '', '', '',
         ])
+        if incluir_fila_invalida:
+            hoja.append([
+                '202610', 'NRC-INVALIDO', 'Física', 'Ana Perez', 'Sede piloto',
+                'Edificio A', 'A-102', 'hora-invalida', '1000', 'X', '', '', '', '', '', '',
+            ])
         from io import BytesIO
         contenido = BytesIO()
         libro.save(contenido)
@@ -288,3 +356,15 @@ class ExcelImporterTests(TestCase):
         ).importar()
         self.assertTrue(resultado_invalido['errores'])
         self.assertEqual(Clase.unfiltered.filter(institucion=self.institucion).count(), 1)
+
+    def test_un_archivo_con_una_fila_invalida_no_reemplaza_la_programacion(self):
+        ExcelImporter(self.crear_archivo(nrc='NRC-1'), self.institucion).importar()
+
+        resultado = ExcelImporter(
+            self.crear_archivo(nrc='NRC-2', incluir_fila_invalida=True), self.institucion
+        ).importar()
+
+        self.assertTrue(resultado['errores'])
+        self.assertEqual(resultado['filas_validas'], 1)
+        self.assertEqual(resultado['filas_invalidas'], 1)
+        self.assertEqual(Clase.unfiltered.get(institucion=self.institucion).nrc, 'NRC-1')

@@ -70,9 +70,33 @@ class ExcelImporter:
 
         self.errores = []
         self.total = 0
+        self.filas_revisadas = 0
+        self.filas_validas = 0
+        self.filas_invalidas = 0
         self.sedes_creadas = []
         self.edificios_creados = []
         self.aulas_creadas = []
+        self.docentes_creados = []
+
+    def _resultado(self, total=None):
+        return {
+            "total": self.total if total is None else total,
+            "errores": self.errores,
+            "filas_revisadas": self.filas_revisadas,
+            "filas_validas": self.filas_validas,
+            "filas_invalidas": self.filas_invalidas,
+            "sedes_creadas": self.sedes_creadas,
+            "edificios_creados": self.edificios_creados,
+            "aulas_creadas": self.aulas_creadas,
+            "docentes_creados": self.docentes_creados,
+        }
+
+    def previsualizar(self):
+        """Valida un archivo sin conservar ningún cambio en la base de datos."""
+        with transaction.atomic():
+            resultado = self.importar()
+            transaction.set_rollback(True)
+        return resultado
 
     def convertir_hora(self, valor):
 
@@ -128,14 +152,8 @@ class ExcelImporter:
         )
 
         if errores:
-
-            return {
-
-                "total": 0,
-
-                "errores": errores,
-
-            }
+            self.errores.extend(errores)
+            return self._resultado()
 
         modalidad, _ = ModalidadAcademica.unfiltered.get_or_create(
 
@@ -230,13 +248,15 @@ class ExcelImporter:
 
         asignador = AsignadorAulas()
 
-        for fila in hoja.iter_rows(
+        for numero_fila, fila in enumerate(hoja.iter_rows(
             min_row=2,
             values_only=True,
-        ):
+        ), start=2):
 
-            if not fila:
+            if not fila or not any(valor not in (None, "") for valor in fila):
                 continue
+
+            self.filas_revisadas += 1
 
             nombre_sede = str(
                 fila[indices["sede"]] or ""
@@ -256,8 +276,9 @@ class ExcelImporter:
 
                 if not nombre_sede:
                     self.errores.append(
-                        "Fila sin sede: la columna SEDE/CAMPUS viene vacía."
+                        f"Fila {numero_fila}: la sede está vacía."
                     )
+                    self.filas_invalidas += 1
                     continue
 
                 sede = Sede.unfiltered.create(
@@ -311,9 +332,10 @@ class ExcelImporter:
 
                     if not nombre_edificio:
                         self.errores.append(
-                            f"Fila sin edificio (sede: {sede.nombre}): la "
-                            "columna EDIFICIO/BLOQUE viene vacía."
+                            f"Fila {numero_fila}: el edificio está vacío "
+                            f"(sede: {sede.nombre})."
                         )
+                        self.filas_invalidas += 1
                         continue
 
                     edificio = Edificio.unfiltered.create(
@@ -355,8 +377,10 @@ class ExcelImporter:
                 if not aula:
                     if not nombre_aula:
                         self.errores.append(
-                            f"Fila sin aula (edificio: {edificio.nombre})."
+                            f"Fila {numero_fila}: el espacio está vacío "
+                            f"(edificio: {edificio.nombre})."
                         )
+                        self.filas_invalidas += 1
                         continue
 
                     # Una instituci\u00f3n nueva puede iniciar desde su programaci\u00f3n.
@@ -380,7 +404,7 @@ class ExcelImporter:
                 fila[indices["docente"]] or "SIN DOCENTE"
             ).strip()
 
-            docente, _ = Docente.unfiltered.get_or_create(
+            docente, docente_creado = Docente.unfiltered.get_or_create(
                 institucion=self.institucion,
                 nombre=nombre_docente,
                 defaults={
@@ -388,6 +412,8 @@ class ExcelImporter:
                     "email": "",
                 }
             )
+            if docente_creado:
+                self.docentes_creados.append(nombre_docente)
 
             try:
                 hora_inicio = self.convertir_hora(
@@ -397,11 +423,23 @@ class ExcelImporter:
                     fila[indices["hora_fin"]]
                 )
             except (TypeError, ValueError):
-                logger.warning(f"Fila omitida: NRC {fila[indices['nrc']] or ''} - horas inválidas. Usa formato HHMM, por ejemplo 0830.")
+                mensaje = (
+                    f"Fila {numero_fila}: las horas no son válidas. "
+                    "Usa HHMM, por ejemplo 0830."
+                )
+                logger.warning(mensaje)
+                self.errores.append(mensaje)
+                self.filas_invalidas += 1
                 continue
 
             if not hora_inicio or not hora_fin or hora_inicio >= hora_fin:
-                logger.warning(f"Fila omitida: NRC {fila[indices['nrc']] or ''} - rango de horas inválido ({hora_inicio}-{hora_fin}).")
+                mensaje = (
+                    f"Fila {numero_fila}: el rango de horas no es válido "
+                    f"({hora_inicio}-{hora_fin})."
+                )
+                logger.warning(mensaje)
+                self.errores.append(mensaje)
+                self.filas_invalidas += 1
                 continue
 
             asignatura = str(
@@ -411,6 +449,27 @@ class ExcelImporter:
             nrc = str(
                 fila[indices["nrc"]] or ""
             ).strip()
+
+            if not nrc or not asignatura:
+                self.errores.append(
+                    f"Fila {numero_fila}: el identificador de clase y la asignatura son obligatorios."
+                )
+                self.filas_invalidas += 1
+                continue
+
+            dias_marcados = [
+                nombre_dia
+                for nombre_dia in dias
+                if indices[nombre_dia] is not None and fila[indices[nombre_dia]] not in (None, "")
+            ]
+            if not dias_marcados:
+                self.errores.append(
+                    f"Fila {numero_fila}: marca al menos un día de clase."
+                )
+                self.filas_invalidas += 1
+                continue
+
+            clases_antes_de_la_fila = len(clases_por_crear)
 
             for nombre_dia, numero_dia in dias.items():
 
@@ -445,25 +504,24 @@ class ExcelImporter:
                 except (ValidationError, Exception) as e:
 
                     self.errores.append(
-                        f"NRC {nrc}: {str(e)}"
+                        f"Fila {numero_fila}, clase {nrc}: {str(e)}"
                     )
 
-        # Ya no cancelamos toda la importación por errores individuales
-        # Las filas con errores se omiten y se continúa con las válidas
+            if len(clases_por_crear) > clases_antes_de_la_fila:
+                self.filas_validas += 1
+            else:
+                self.filas_invalidas += 1
+
         if self.errores:
-            logger.warning(f"Filas omitidas por errores: {len(self.errores)}")
-            logger.warning(f"Primeros errores: {self.errores[:5]}")
+            logger.warning("La importación se canceló por errores de validación: %s", len(self.errores))
+            transaction.set_rollback(True)
+            return self._resultado(total=len(clases_por_crear))
 
         if not clases_por_crear:
             logger.warning("No se encontraron clases válidas para importar")
             transaction.set_rollback(True)
-            return {
-                "total": 0,
-                "errores": self.errores + ["El archivo no contiene clases válidas para importar."],
-                "sedes_creadas": self.sedes_creadas,
-                "edificios_creados": self.edificios_creados,
-                "aulas_creadas": self.aulas_creadas,
-            }
+            self.errores.append("El archivo no contiene clases válidas para importar.")
+            return self._resultado()
 
         # Solo se reemplaza la programación vigente una vez el archivo pasó
         # todas las validaciones necesarias.
@@ -471,33 +529,21 @@ class ExcelImporter:
         respaldo_anterior = capturar_programacion(self.institucion)
         Clase.unfiltered.filter(institucion=self.institucion).delete()
         Clase.unfiltered.bulk_create(clases_por_crear)
-        total = len(clases_por_crear)
+        self.total = len(clases_por_crear)
 
         ImportacionProgramacion.unfiltered.create(
             institucion=self.institucion,
             archivo_nombre=getattr(self.archivo, 'name', 'programacion.xlsx'),
             creado_por=self.usuario if getattr(self.usuario, 'is_authenticated', False) else None,
-            total_clases=total,
+            total_clases=self.total,
             respaldo_anterior=respaldo_anterior,
         )
 
         logger.info(f"Importación exitosa:")
-        logger.info(f"  - Clases creadas: {total}")
+        logger.info(f"  - Clases creadas: {self.total}")
         logger.info(f"  - Sedes creadas: {len(self.sedes_creadas)}")
         logger.info(f"  - Edificios creados: {len(self.edificios_creados)}")
         logger.info(f"  - Aulas creadas: {len(self.aulas_creadas)}")
         logger.info(f"  - Filas omitidas: {len(self.errores)}")
 
-        return {
-
-            "total": total,
-
-            "errores": self.errores,
-
-            "sedes_creadas": self.sedes_creadas,
-
-            "edificios_creados": self.edificios_creados,
-
-            "aulas_creadas": self.aulas_creadas,
-
-        }
+        return self._resultado()

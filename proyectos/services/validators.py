@@ -4,30 +4,28 @@ class ExcelValidator:
     Valida que el Excel tenga la información mínima requerida.
     """
 
-    OBLIGATORIOS = [
-
-        "nrc",
-        "asignatura",
-        "docente",
-        "sede",
-        "edificio",
-        "aula",
-        "hora_inicio",
-        "hora_fin",
-
-    ]
+    OBLIGATORIOS = {
+        "nrc": "identificador de clase",
+        "asignatura": "asignatura",
+        "docente": "docente",
+        "sede": "sede",
+        "edificio": "edificio",
+        "aula": "espacio o aula",
+        "hora_inicio": "hora de inicio",
+        "hora_fin": "hora de fin",
+    }
 
     @classmethod
     def validar(cls, indices):
 
         errores = []
 
-        for campo in cls.OBLIGATORIOS:
+        for campo, etiqueta in cls.OBLIGATORIOS.items():
 
             if indices.get(campo) is None:
 
                 errores.append(
-                    f"No se encontró la columna '{campo}'"
+                    f"Falta la columna requerida: {etiqueta}."
                 )
 
         return errores

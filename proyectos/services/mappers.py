@@ -8,10 +8,17 @@ class ExcelMapper:
 
         "periodo": [
             "PERIODO",
+            "PERÍODO",
+            "PERIODO_ACADEMICO",
+            "PERÍODO_ACADÉMICO",
         ],
 
         "nrc": [
             "NRC",
+            "ID_CLASE",
+            "IDENTIFICADOR_CLASE",
+            "CODIGO_CLASE",
+            "CÓDIGO_CLASE",
         ],
 
         "asignatura": [
@@ -19,12 +26,14 @@ class ExcelMapper:
             "ASIGNATURA",
             "MATERIA",
             "CURSO",
+            "NOMBRE_ASIGNATURA",
         ],
 
         "docente": [
             "NOMBRE_DOCENTE",
             "DOCENTE",
             "PROFESOR",
+            "INSTRUCTOR",
         ],
 
         "sede": [
@@ -42,27 +51,32 @@ class ExcelMapper:
             "SALÓN",
             "AULA",
             "ESPACIO",
+            "ESPACIO_ACADEMICO",
+            "ESPACIO_ACADÉMICO",
         ],
 
         "hora_inicio": [
             "HI",
             "HORA INICIO",
             "HORA_INICIO",
+            "INICIO",
         ],
 
         "hora_fin": [
             "HF",
             "HORA FIN",
+            "HORA_FIN",
             "HORA_FINAL",
+            "FIN",
         ],
 
-        "lunes": ["L"],
-        "martes": ["M"],
-        "miercoles": ["I"],
-        "jueves": ["J"],
-        "viernes": ["V"],
-        "sabado": ["S"],
-        "domingo": ["D"],
+        "lunes": ["L", "LUN", "LUNES"],
+        "martes": ["M", "MAR", "MARTES"],
+        "miercoles": ["I", "MIE", "MIÉ", "MIERCOLES", "MIÉRCOLES"],
+        "jueves": ["J", "JUE", "JUEVES"],
+        "viernes": ["V", "VIE", "VIERNES"],
+        "sabado": ["S", "SAB", "SÁB", "SABADO", "SÁBADO"],
+        "domingo": ["D", "DOM", "DOMINGO"],
     }
 
     @classmethod
