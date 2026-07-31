@@ -146,6 +146,12 @@ STATICFILES_DIRS = [
 if not DEBUG:
     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
     STORAGES = {
+        # Las revisiones de Excel se conservan temporalmente entre la vista
+        # previa y la confirmación. Sin este backend Django no puede guardar
+        # esos archivos cuando DEBUG=False (caso Render).
+        'default': {
+            'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        },
         'staticfiles': {
             'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
         },
