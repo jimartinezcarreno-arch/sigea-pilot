@@ -188,6 +188,9 @@ def aulas_disponibles(request):
             {
                 "aula": aula,
                 "estado": estado,
+                # Sigue estando disponible para consulta, pero se diferencia
+                # visualmente de un aula libre que sí cuenta con agenda.
+                "sin_programacion": not aula.programacion_cargada,
                 "materia_actual": clase_en_curso.asignatura if clase_en_curso else None,
                 "docente_actual": clase_en_curso.docente.nombre if clase_en_curso else None,
                 "horarios_ocupados": clases_aula,

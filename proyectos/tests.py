@@ -80,6 +80,16 @@ class SIGEATestCase(TestCase):
         self.assertContains(respuesta, '"daysOfWeek": [1]')
         self.assertContains(respuesta, "Matematicas")
 
+    def test_aula_sin_programacion_se_diferencia_sin_dejar_de_estar_disponible(self):
+        respuesta = self.client.get('/consultar-aulas/', HTTP_HOST='inst1.localhost')
+        self.assertEqual(respuesta.status_code, 200)
+        tarjetas = {item['aula'].nombre: item for item in respuesta.context['resultado']}
+
+        self.assertFalse(tarjetas['A-101']['sin_programacion'])
+        self.assertTrue(tarjetas['A-102']['sin_programacion'])
+        self.assertEqual(tarjetas['A-102']['estado'], 'DISPONIBLE')
+        self.assertContains(respuesta, 'Sin programación registrada')
+
     def test_reassignment_requires_post_and_uses_available_room(self):
         url = f"/conflictos/reasignar/{self.clase.id}/{self.aula_alterna.id}/"
         respuesta = self.client.get(url, HTTP_HOST="inst1.localhost")

@@ -501,7 +501,7 @@ Revisar archivo Excel
 
 <div class="aula-grid-item">
 
-<div class="dashboard-card {% if item.estado == 'DISPONIBLE' %}libre{% else %}ocupada{% endif %}" data-estado="{{ item.estado }}">
+<div class="dashboard-card {% if item.estado == 'OCUPADA' %}ocupada{% elif item.sin_programacion %}sin-programacion{% else %}libre{% endif %}" data-estado="{{ item.estado }}">
 
         <h5>
 
@@ -525,7 +525,17 @@ Revisar archivo Excel
 
     <div>
 
-        {% if item.estado == "DISPONIBLE" %}
+        {% if item.estado == "DISPONIBLE" and item.sin_programacion %}
+
+            <span class="estado-badge estado-sin-programacion" title="Disponible ahora, sin clases registradas en SIGEA">
+
+                <i class="bi bi-exclamation-circle-fill"></i>
+
+                Sin programación
+
+            </span>
+
+        {% elif item.estado == "DISPONIBLE" %}
 
             <span class="estado-badge estado-libre">
 
@@ -598,7 +608,15 @@ Revisar archivo Excel
 
             <strong>Estado:</strong>
 
-            {% if item.estado == "DISPONIBLE" %}
+            {% if item.estado == "DISPONIBLE" and item.sin_programacion %}
+
+                <span class="sin-programacion">
+
+                    Sin programación
+
+                </span>
+
+            {% elif item.estado == "DISPONIBLE" %}
 
                 <span class="libre">
 
@@ -632,9 +650,14 @@ Revisar archivo Excel
 
         {% else %}
 
-        <div class="alert alert-success py-2">
+        <div class="alert {% if item.sin_programacion %}alert-warning{% else %}alert-success{% endif %} py-2">
 
-            Sin clase en este momento
+            {% if item.sin_programacion %}
+                <strong><i class="bi bi-exclamation-circle"></i> Sin programación registrada</strong><br>
+                <small>Disponible ahora; aún no tiene clases asociadas en SIGEA.</small>
+            {% else %}
+                Sin clase en este momento
+            {% endif %}
 
         </div>
 
@@ -697,7 +720,7 @@ Revisar archivo Excel
 
                     <td colspan="4">
 
-                        Sin programación
+                        Sin programación registrada
 
                     </td>
 

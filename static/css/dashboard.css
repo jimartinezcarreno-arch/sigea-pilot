@@ -300,6 +300,10 @@ body {
     border-left-color: var(--danger-solid);
 }
 
+.dashboard-card.sin-programacion {
+    border-left-color: var(--warning-solid);
+}
+
 .dashboard-card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-hover);
@@ -347,6 +351,12 @@ body {
     border: 1px solid #fecaca;
 }
 
+.estado-sin-programacion {
+    background-color: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
 /* --- ALERTAS DENTRO DE TARJETAS --- */
 .dashboard-card .alert {
     border: none;
@@ -374,6 +384,12 @@ body {
     background-color: #f0f9ff;
     color: #075985;
     border: 1px solid #e0f2fe;
+}
+
+.dashboard-card .alert-warning {
+    background-color: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
 }
 
 /* --- TABLAS DENTRO DE TARJETAS (REEMPLAZO DE TABLE-DARK) --- */
@@ -434,6 +450,11 @@ body {
 
 .dashboard-card p span.ocupada {
     color: #ef4444;
+    font-weight: 700;
+}
+
+.dashboard-card p span.sin-programacion {
+    color: #d97706;
     font-weight: 700;
 }
 
