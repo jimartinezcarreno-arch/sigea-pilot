@@ -13,6 +13,14 @@ class ExcelMapper:
             "PERÍODO_ACADÉMICO",
         ],
 
+        # Esta columna es opcional. Algunas instituciones incluyen registros
+        # inactivos en la misma hoja de planeación y no deben ocupar un aula.
+        "estado_nrc": [
+            "ESTADO_NRC",
+            "ESTADO NRC",
+            "ESTADO",
+        ],
+
         "nrc": [
             "NRC",
             "ID_CLASE",

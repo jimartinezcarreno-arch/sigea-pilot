@@ -27,7 +27,7 @@
             <p class="text-primary fw-semibold small mb-1">REVISIÓN DE PROGRAMACIÓN</p>
             <h1 class="h2 fw-bold mb-2">{{ archivo_nombre }}</h1>
             {% if puede_confirmar %}
-            <p class="text-secondary mb-0">El archivo es válido. Revisa el resumen y confirma solo si deseas reemplazar la programación vigente.</p>
+            <p class="text-secondary mb-0">La programación completa está lista. Revisa el resumen y confirma solo si deseas reemplazar la programación vigente.</p>
             {% else %}
             <p class="text-secondary mb-0">No se realizó ningún cambio. Corrige los errores del archivo antes de volver a revisarlo.</p>
             {% endif %}
@@ -36,13 +36,37 @@
         <div class="row g-3 mb-4">
             <div class="col-6 col-lg-3"><div class="metric"><div class="small text-secondary">Filas revisadas</div><div class="metric-number text-primary mt-2">{{ resultado.filas_revisadas }}</div></div></div>
             <div class="col-6 col-lg-3"><div class="metric"><div class="small text-secondary">Filas válidas</div><div class="metric-number text-success mt-2">{{ resultado.filas_validas }}</div></div></div>
-            <div class="col-6 col-lg-3"><div class="metric"><div class="small text-secondary">Clases a crear</div><div class="metric-number text-primary mt-2">{{ resultado.total }}</div></div></div>
+            <div class="col-6 col-lg-3"><div class="metric"><div class="small text-secondary">No programadas</div><div class="metric-number text-warning mt-2">{{ resultado.filas_omitidas }}</div></div></div>
             <div class="col-6 col-lg-3"><div class="metric"><div class="small text-secondary">Errores</div><div class="metric-number {% if resultado.errores %}text-danger{% else %}text-success{% endif %} mt-2">{{ resultado.errores|length }}</div></div></div>
         </div>
 
+        <section class="card mb-4">
+            <div class="p-4">
+                <h2 class="h5 fw-bold mb-2"><i class="bi bi-calendar-check text-primary"></i> Programación que SIGEA aplicará</h2>
+                <p class="mb-0 text-secondary">Se crearán <strong>{{ resultado.total }} clases</strong> a partir de {{ resultado.filas_validas }} filas con espacio, horario y día completos.</p>
+            </div>
+        </section>
+
+        {% if resultado.filas_omitidas %}
+        <section class="card border-warning mb-4">
+            <div class="p-4 border-bottom border-warning-subtle">
+                <h2 class="h5 fw-bold mb-1 text-warning-emphasis"><i class="bi bi-info-circle-fill"></i> Registros no programados</h2>
+                <p class="mb-0 text-secondary small">No son errores: SIGEA los deja fuera porque no representan una ocupación de aula completa.</p>
+            </div>
+            <div class="p-4">
+                <ul class="mb-0">
+                    {% for item in resultado.resumen_omitidas %}<li><strong>{{ item.total }}</strong> {{ item.etiqueta|lower }}.</li>{% endfor %}
+                </ul>
+                {% if resultado.muestras_omitidas %}
+                <details class="mt-3"><summary class="small text-secondary">Ver ejemplos de filas omitidas</summary><ul class="small text-secondary mt-2 mb-0">{% for muestra in resultado.muestras_omitidas %}<li>{{ muestra }}</li>{% endfor %}</ul></details>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
         {% if resultado.errores %}
         <section class="card border-danger mb-4">
-            <div class="p-4 border-bottom border-danger-subtle"><h2 class="h5 fw-bold mb-1 text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Corrige estas observaciones</h2><p class="mb-0 text-secondary small">SIGEA no aplicará una importación parcial.</p></div>
+            <div class="p-4 border-bottom border-danger-subtle"><h2 class="h5 fw-bold mb-1 text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Corrige estas observaciones</h2><p class="mb-0 text-secondary small">SIGEA no reemplazará la programación mientras existan errores en las filas que sí están programadas.</p></div>
             <ul class="list-group list-group-flush">
                 {% for error in resultado.errores %}<li class="list-group-item text-danger"><i class="bi bi-x-circle me-2"></i>{{ error }}</li>{% endfor %}
             </ul>

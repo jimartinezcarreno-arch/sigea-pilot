@@ -335,6 +335,39 @@ class ExcelImporterTests(TestCase):
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         )
 
+    @staticmethod
+    def archivo_con_registros_no_programados():
+        """Representa el formato institucional: clases, referencias e inactivos."""
+        libro = Workbook()
+        hoja = libro.active
+        hoja.append([
+            'PERIODO', 'NRC', 'ESTADO_NRC', 'TITULO', 'NOMBRE_DOCENTE',
+            'SEDE', 'EDIFICIO', 'SALON', 'HI', 'HF', 'L', 'M', 'I', 'J',
+            'V', 'S', 'D',
+        ])
+        hoja.append([
+            '202645', 'NRC-REAL', 'Activo', 'Matematicas', 'Ana Perez',
+            'BUC', 'DJCB', '305', '0830', '1000', 'X', '', '', '', '', '', '',
+        ])
+        hoja.append([
+            '202645', 'Consultar Nacionales', '', 'Ingles III', '', 'BUC',
+            '', '', '', '', '', '', '', '', '', '', '',
+        ])
+        hoja.append([
+            '202645', 'NRC-INACTIVO', 'Inactivo', 'Curso cerrado', '', 'BUC',
+            '', '', '', '', '', '', '', '', '', '', '',
+        ])
+        hoja.append([
+            '202645', 'NRC-VIRTUAL', 'Activo', 'Actividad virtual', 'Ana Perez',
+            'BUC', 'VIRTU', '', '0600', '0759', '', '', '', '', '', '', '',
+        ])
+        contenido = BytesIO()
+        libro.save(contenido)
+        return SimpleUploadedFile(
+            'planeacion-institucional.xlsx', contenido.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+
     def test_crea_espacios_faltantes_y_conserva_horario_si_hay_errores(self):
         resultado = ExcelImporter(self.crear_archivo(), self.institucion).importar()
         self.assertEqual(resultado['errores'], [])
@@ -368,3 +401,27 @@ class ExcelImporterTests(TestCase):
         self.assertEqual(resultado['filas_validas'], 1)
         self.assertEqual(resultado['filas_invalidas'], 1)
         self.assertEqual(Clase.unfiltered.get(institucion=self.institucion).nrc, 'NRC-1')
+
+    def test_importa_programacion_completa_y_omite_referencias_e_inactivos(self):
+        resultado = ExcelImporter(
+            self.archivo_con_registros_no_programados(), self.institucion
+        ).importar()
+
+        self.assertEqual(resultado['errores'], [])
+        self.assertEqual(resultado['filas_revisadas'], 4)
+        self.assertEqual(resultado['filas_validas'], 1)
+        self.assertEqual(resultado['filas_omitidas'], 3)
+        self.assertEqual(resultado['total'], 1)
+        self.assertEqual(
+            {item['etiqueta']: item['total'] for item in resultado['resumen_omitidas']},
+            {
+                'Referencias sin programación (Consultar ...)': 1,
+                'Clases marcadas como inactivas': 1,
+                'Registros sin día de clase': 1,
+            },
+        )
+        self.assertEqual(
+            list(Clase.unfiltered.filter(institucion=self.institucion).values_list('nrc', flat=True)),
+            ['NRC-REAL'],
+        )
+        self.assertFalse(Aula.unfiltered.filter(institucion=self.institucion, nombre='VIRTUAL').exists())

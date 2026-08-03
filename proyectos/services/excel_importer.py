@@ -62,6 +62,17 @@ class ExcelImporter:
         "domingo": 7,
     }
 
+    EDIFICIOS_VIRTUALES = {"VIRTU", "VIRTUAL", "SINCR"}
+
+    ETIQUETAS_OMITIDAS = {
+        "referencia": "Referencias sin programación (Consultar ...)",
+        "inactiva": "Clases marcadas como inactivas",
+        "sin_programacion": "Registros sin horario asignado",
+        "sin_dia": "Registros sin día de clase",
+        "sin_horas": "Registros sin horario completo",
+        "sin_ubicacion": "Registros sin espacio definido",
+    }
+
     def __init__(self, archivo, institucion, usuario=None):
 
         self.archivo = archivo
@@ -73,6 +84,11 @@ class ExcelImporter:
         self.filas_revisadas = 0
         self.filas_validas = 0
         self.filas_invalidas = 0
+        self.filas_omitidas = 0
+        self.omitidas_por_motivo = {
+            motivo: 0 for motivo in self.ETIQUETAS_OMITIDAS
+        }
+        self.muestras_omitidas = []
         self.sedes_creadas = []
         self.edificios_creados = []
         self.aulas_creadas = []
@@ -85,6 +101,13 @@ class ExcelImporter:
             "filas_revisadas": self.filas_revisadas,
             "filas_validas": self.filas_validas,
             "filas_invalidas": self.filas_invalidas,
+            "filas_omitidas": self.filas_omitidas,
+            "resumen_omitidas": [
+                {"etiqueta": self.ETIQUETAS_OMITIDAS[motivo], "total": total}
+                for motivo, total in self.omitidas_por_motivo.items()
+                if total
+            ],
+            "muestras_omitidas": self.muestras_omitidas,
             "sedes_creadas": self.sedes_creadas,
             "edificios_creados": self.edificios_creados,
             "aulas_creadas": self.aulas_creadas,
@@ -97,6 +120,31 @@ class ExcelImporter:
             resultado = self.importar()
             transaction.set_rollback(True)
         return resultado
+
+    @staticmethod
+    def _tiene_valor(valor):
+        return valor is not None and str(valor).strip() != ""
+
+    @classmethod
+    def _dia_marcado(cls, valor):
+        return cls._tiene_valor(valor) and str(valor).strip().upper() not in {
+            "0", "N", "NO", "FALSE",
+        }
+
+    @classmethod
+    def _texto(cls, valor):
+        return str(valor or "").strip()
+
+    def _omitir_fila(self, numero_fila, nrc, motivo):
+        """Registra filas informativas o aún no programadas, sin tratarlas como error."""
+        self.filas_omitidas += 1
+        self.omitidas_por_motivo[motivo] += 1
+        if len(self.muestras_omitidas) < 8:
+            identificador = nrc or "sin identificador"
+            self.muestras_omitidas.append(
+                f"Fila {numero_fila} ({identificador}): "
+                f"{self.ETIQUETAS_OMITIDAS[motivo].lower()}."
+            )
 
     def convertir_hora(self, valor):
 
@@ -234,15 +282,7 @@ class ExcelImporter:
 
         logger.info("Validando e importando clases...")
 
-        dias = {
-            "lunes": 1,
-            "martes": 2,
-            "miercoles": 3,
-            "jueves": 4,
-            "viernes": 5,
-            "sabado": 6,
-            "domingo": 7,
-        }
+        dias = self.DIAS
 
         clases_por_crear = []
 
@@ -257,6 +297,54 @@ class ExcelImporter:
                 continue
 
             self.filas_revisadas += 1
+
+            nrc = self._texto(fila[indices["nrc"]])
+            asignatura = self._texto(fila[indices["asignatura"]])
+            estado_nrc = self._texto(
+                fila[indices["estado_nrc"]]
+                if indices.get("estado_nrc") is not None else ""
+            ).upper()
+            nombre_edificio_original = self._texto(fila[indices["edificio"]]).upper()
+            nombre_aula_original = self._texto(fila[indices["aula"]]).upper()
+            valor_hora_inicio = fila[indices["hora_inicio"]]
+            valor_hora_fin = fila[indices["hora_fin"]]
+            dias_marcados = [
+                nombre_dia
+                for nombre_dia in dias
+                if indices[nombre_dia] is not None
+                and self._dia_marcado(fila[indices[nombre_dia]])
+            ]
+
+            # El archivo institucional puede incluir filas de consulta,
+            # clases inactivas o actividades aún sin día asignado. No son
+            # errores de formato ni crean sedes, aulas o docentes vacíos.
+            if nrc.upper().startswith("CONSULTAR"):
+                self._omitir_fila(numero_fila, nrc, "referencia")
+                continue
+            if estado_nrc in {"INACTIVO", "CANCELADO", "CANCELADA"}:
+                self._omitir_fila(numero_fila, nrc, "inactiva")
+                continue
+
+            tiene_inicio = self._tiene_valor(valor_hora_inicio)
+            tiene_fin = self._tiene_valor(valor_hora_fin)
+            tiene_horas = tiene_inicio and tiene_fin
+            es_virtual = nombre_edificio_original in self.EDIFICIOS_VIRTUALES
+            tiene_ubicacion = es_virtual or (
+                bool(nombre_edificio_original) and bool(nombre_aula_original)
+            )
+
+            if not tiene_inicio and not tiene_fin and not dias_marcados:
+                self._omitir_fila(numero_fila, nrc, "sin_programacion")
+                continue
+            if not dias_marcados:
+                self._omitir_fila(numero_fila, nrc, "sin_dia")
+                continue
+            if not tiene_horas:
+                self._omitir_fila(numero_fila, nrc, "sin_horas")
+                continue
+            if not tiene_ubicacion:
+                self._omitir_fila(numero_fila, nrc, "sin_ubicacion")
+                continue
 
             nombre_sede = str(
                 fila[indices["sede"]] or ""
@@ -302,7 +390,7 @@ class ExcelImporter:
                 nombre_edificio
             )
 
-            if nombre_edificio in ("VIRTU", "SINCR", ""):
+            if nombre_edificio in self.EDIFICIOS_VIRTUALES:
 
                 edificio, _ = Edificio.unfiltered.get_or_create(
                     institucion=self.institucion,
@@ -416,12 +504,8 @@ class ExcelImporter:
                 self.docentes_creados.append(nombre_docente)
 
             try:
-                hora_inicio = self.convertir_hora(
-                    fila[indices["hora_inicio"]]
-                )
-                hora_fin = self.convertir_hora(
-                    fila[indices["hora_fin"]]
-                )
+                hora_inicio = self.convertir_hora(valor_hora_inicio)
+                hora_fin = self.convertir_hora(valor_hora_fin)
             except (TypeError, ValueError):
                 mensaje = (
                     f"Fila {numero_fila}: las horas no son válidas. "
@@ -442,29 +526,9 @@ class ExcelImporter:
                 self.filas_invalidas += 1
                 continue
 
-            asignatura = str(
-                fila[indices["asignatura"]] or ""
-            ).strip()
-
-            nrc = str(
-                fila[indices["nrc"]] or ""
-            ).strip()
-
             if not nrc or not asignatura:
                 self.errores.append(
                     f"Fila {numero_fila}: el identificador de clase y la asignatura son obligatorios."
-                )
-                self.filas_invalidas += 1
-                continue
-
-            dias_marcados = [
-                nombre_dia
-                for nombre_dia in dias
-                if indices[nombre_dia] is not None and fila[indices[nombre_dia]] not in (None, "")
-            ]
-            if not dias_marcados:
-                self.errores.append(
-                    f"Fila {numero_fila}: marca al menos un día de clase."
                 )
                 self.filas_invalidas += 1
                 continue
@@ -478,7 +542,7 @@ class ExcelImporter:
                 if indice is None:
                     continue
 
-                if fila[indice] in (None, ""):
+                if not self._dia_marcado(fila[indice]):
                     continue
 
                 try:
@@ -544,6 +608,6 @@ class ExcelImporter:
         logger.info(f"  - Sedes creadas: {len(self.sedes_creadas)}")
         logger.info(f"  - Edificios creados: {len(self.edificios_creados)}")
         logger.info(f"  - Aulas creadas: {len(self.aulas_creadas)}")
-        logger.info(f"  - Filas omitidas: {len(self.errores)}")
+        logger.info(f"  - Filas omitidas: {self.filas_omitidas}")
 
         return self._resultado()

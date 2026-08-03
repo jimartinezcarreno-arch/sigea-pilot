@@ -74,7 +74,7 @@ def _contexto_revision_importacion(institucion, pendiente, resultado):
         'archivo_nombre': pendiente['nombre'],
         'resultado': resultado,
         'clases_actuales': Clase.unfiltered.filter(institucion=institucion).count(),
-        'puede_confirmar': not resultado.get('errores'),
+        'puede_confirmar': not resultado.get('errores') and resultado.get('total', 0) > 0,
     }
 
 
