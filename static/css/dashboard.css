@@ -392,6 +392,99 @@ body {
     border: 1px solid #fde68a;
 }
 
+/* Actividad actual y próxima: mantiene la información operativa visible
+   sin obligar a leer toda la programación semanal de la tarjeta. */
+.actividad-aula {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    padding: 12px 14px;
+    margin: 14px 0;
+    font-size: 0.84rem;
+    line-height: 1.55;
+}
+
+.actividad-etiqueta {
+    color: var(--text-light);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+.actividad-titulo {
+    display: block;
+    color: var(--text);
+    font-size: 0.98rem;
+    margin-bottom: 4px;
+}
+
+.actividad-tiempo {
+    font-weight: 700;
+    margin-top: 7px;
+}
+
+.actividad-actual {
+    background: #fff1f2;
+    border-color: #fecdd3;
+    color: #9f1239;
+}
+
+.actividad-actual .actividad-etiqueta,
+.actividad-actual .actividad-titulo {
+    color: #9f1239;
+}
+
+.actividad-libre {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #166534;
+}
+
+.actividad-libre .actividad-etiqueta,
+.actividad-libre .actividad-titulo {
+    color: #166534;
+}
+
+.actividad-sin-programacion {
+    background: #fffbeb;
+    border-color: #fde68a;
+    color: #92400e;
+}
+
+.actividad-sin-programacion .actividad-etiqueta,
+.actividad-sin-programacion .actividad-titulo {
+    color: #92400e;
+}
+
+.actividad-proxima {
+    background: #f0f9ff;
+    border-color: #bae6fd;
+    color: #075985;
+}
+
+.actividad-proxima .actividad-etiqueta,
+.actividad-proxima .actividad-titulo {
+    color: #075985;
+}
+
+.programacion-completa {
+    border-top: 1px solid var(--border);
+    margin-top: 18px;
+    padding-top: 12px;
+}
+
+.programacion-completa summary {
+    color: var(--primary-dark);
+    cursor: pointer;
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+
+.programacion-completa summary:hover {
+    color: var(--primary-solid);
+}
+
 /* --- TABLAS DENTRO DE TARJETAS (REEMPLAZO DE TABLE-DARK) --- */
 .dashboard-card table.table {
     background-color: transparent !important;

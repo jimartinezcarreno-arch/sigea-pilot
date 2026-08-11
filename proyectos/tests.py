@@ -88,7 +88,10 @@ class SIGEATestCase(TestCase):
         self.assertFalse(tarjetas['A-101']['sin_programacion'])
         self.assertTrue(tarjetas['A-102']['sin_programacion'])
         self.assertEqual(tarjetas['A-102']['estado'], 'DISPONIBLE')
+        self.assertEqual(tarjetas['A-101']['programacion_total'], 1)
+        self.assertEqual(tarjetas['A-102']['programacion_total'], 0)
         self.assertContains(respuesta, 'Sin programación registrada')
+        self.assertContains(respuesta, 'Ver programación completa')
 
     def test_reassignment_requires_post_and_uses_available_room(self):
         url = f"/conflictos/reasignar/{self.clase.id}/{self.aula_alterna.id}/"

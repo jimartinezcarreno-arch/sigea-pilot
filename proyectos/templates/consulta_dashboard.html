@@ -583,87 +583,40 @@ Revisar archivo Excel
 
 </div>
 
+{% if item.clase_actual %}
+<section class="actividad-aula actividad-actual">
+    <div class="actividad-etiqueta"><i class="bi bi-book-fill"></i> Clase actual</div>
+    <strong class="actividad-titulo">{{ item.clase_actual.asignatura }}</strong>
+    <div><i class="bi bi-person-workspace"></i> {{ item.clase_actual.docente.nombre }}</div>
+    {% if item.clase_actual.nrc %}<div><i class="bi bi-people-fill"></i> Código: {{ item.clase_actual.nrc }}</div>{% endif %}
+    <div><i class="bi bi-clock"></i> {{ item.clase_actual.hora_inicio }} - {{ item.clase_actual.hora_fin }}</div>
+    {% if item.tiempo_libre_minutos %}<div class="actividad-tiempo">Finaliza en {{ item.tiempo_libre_minutos }} minutos</div>{% endif %}
+</section>
+{% elif item.sin_programacion %}
+<section class="actividad-aula actividad-sin-programacion">
+    <div class="actividad-etiqueta"><i class="bi bi-exclamation-circle"></i> Sin programación registrada</div>
+    <div>Disponible ahora; aún no tiene clases asociadas en SIGEA.</div>
+</section>
+{% else %}
+<section class="actividad-aula actividad-libre">
+    <div class="actividad-etiqueta"><i class="bi bi-check-circle-fill"></i> Libre ahora</div>
+    {% if item.tiempo_libre_minutos %}<div class="actividad-tiempo">Disponible por {{ item.tiempo_libre_minutos }} minutos</div>{% else %}<div>Sin clase en este momento.</div>{% endif %}
+</section>
+{% endif %}
+
 {% if item.proxima_clase %}
-<div class="alert alert-info py-2 mb-3">
-    <strong><i class="bi bi-clock"></i> Próxima clase:</strong><br>
-    {{ item.proxima_clase.asignatura }} ({{ item.proxima_clase.nrc }})<br>
-    <small>{{ item.proxima_clase.hora_inicio }} - {{ item.proxima_clase.hora_fin }}</small>
-</div>
+<section class="actividad-aula actividad-proxima">
+    <div class="actividad-etiqueta"><i class="bi bi-arrow-right-circle"></i> Próxima clase</div>
+    <strong class="actividad-titulo">{{ item.proxima_clase.asignatura }}</strong>
+    <div><i class="bi bi-person-workspace"></i> {{ item.proxima_clase.docente.nombre }}</div>
+    {% if item.proxima_clase.nrc %}<div><i class="bi bi-people-fill"></i> Código: {{ item.proxima_clase.nrc }}</div>{% endif %}
+    <div><i class="bi bi-clock"></i> {{ item.proxima_clase.hora_inicio }} - {{ item.proxima_clase.hora_fin }}</div>
+</section>
 {% endif %}
 
-{% if item.tiempo_libre_minutos %}
-<div class="alert alert-warning py-2 mb-3">
-    <strong><i class="bi bi-hourglass-split"></i> Tiempo libre:</strong><br>
-    {% if item.estado == "OCUPADA" %}
-        <small>Libre en {{ item.tiempo_libre_minutos }} minutos</small>
-    {% else %}
-        <small>Disponible por {{ item.tiempo_libre_minutos }} minutos</small>
-    {% endif %}
-</div>
-{% endif %}
-
-        <hr>
-
-        <p>
-
-            <strong>Estado:</strong>
-
-            {% if item.estado == "DISPONIBLE" and item.sin_programacion %}
-
-                <span class="sin-programacion">
-
-                    Sin programación
-
-                </span>
-
-            {% elif item.estado == "DISPONIBLE" %}
-
-                <span class="libre">
-
-                    Libre
-
-                </span>
-
-            {% else %}
-
-                <span class="ocupada">
-
-                    Ocupada
-
-                </span>
-
-            {% endif %}
-
-        </p>
-
-        {% if item.materia_actual %}
-
-        <div class="alert alert-danger py-2">
-
-            <strong>{{ item.materia_actual }}</strong>
-
-            <br>
-
-            {{ item.docente_actual }}
-
-        </div>
-
-        {% else %}
-
-        <div class="alert {% if item.sin_programacion %}alert-warning{% else %}alert-success{% endif %} py-2">
-
-            {% if item.sin_programacion %}
-                <strong><i class="bi bi-exclamation-circle"></i> Sin programación registrada</strong><br>
-                <small>Disponible ahora; aún no tiene clases asociadas en SIGEA.</small>
-            {% else %}
-                Sin clase en este momento
-            {% endif %}
-
-        </div>
-
-        {% endif %}
-
-        <div class="table-responsive-mobile">
+        <details class="programacion-completa">
+            <summary>Ver programación completa{% if item.programacion_total %} ({{ item.programacion_total }} clases){% endif %}</summary>
+            <div class="table-responsive-mobile mt-3">
         <table class="table table-dark table-sm align-middle">
 
             <thead>
@@ -732,6 +685,7 @@ Revisar archivo Excel
 
         </table>
         </div>
+        </details>
 
     </div>
 
