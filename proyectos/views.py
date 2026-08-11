@@ -23,6 +23,16 @@ from .models import (
     ModalidadAcademica
 )
 
+DIAS_SEMANA = (
+    (1, "Lunes"),
+    (2, "Martes"),
+    (3, "Miércoles"),
+    (4, "Jueves"),
+    (5, "Viernes"),
+    (6, "Sábado"),
+    (7, "Domingo"),
+)
+
 
 @login_required
 def dashboard_modulos(request):
@@ -51,6 +61,8 @@ def aulas_disponibles(request):
     aula_id = request.GET.get("aula")
 
     docente_id = request.GET.get("docente")
+
+    dia_seleccionado = request.GET.get("dia", "")
 
     hora_buscada_str = request.GET.get("hora") or "18:30"
 
@@ -139,8 +151,15 @@ def aulas_disponibles(request):
         )
     )
 
-    resultado = []
     dia_actual = datetime.now().weekday() + 1  # Django usa 1=Lunes, 7=Domingo
+    dias_validos = {str(numero) for numero, _ in DIAS_SEMANA}
+    if dia_seleccionado not in dias_validos:
+        dia_seleccionado = ""
+        dia_consulta = dia_actual
+    else:
+        dia_consulta = int(dia_seleccionado)
+
+    resultado = []
     libres_count = 0
     ocupadas_count = 0
 
@@ -149,7 +168,7 @@ def aulas_disponibles(request):
         if docente_id:
             clases_aula = [clase for clase in clases_aula if str(clase.docente_id) == docente_id]
 
-        clases_del_dia = [clase for clase in clases_aula if clase.dia_semana == dia_actual]
+        clases_del_dia = [clase for clase in clases_aula if clase.dia_semana == dia_consulta]
         clase_en_curso = next(
             (
                 clase
@@ -207,13 +226,14 @@ def aulas_disponibles(request):
     aulas_libres = libres_count
     aulas_ocupadas = ocupadas_count
     logging.getLogger(__name__).debug(
-        "Consulta de aulas: %s aulas, %s clases, sede=%s, edificio=%s, aula=%s, docente=%s",
+        "Consulta de aulas: %s aulas, %s clases, sede=%s, edificio=%s, aula=%s, docente=%s, dia=%s",
         total_aulas,
         total_clases,
         sede_id,
         edificio_id,
         aula_id,
         docente_id,
+        dia_consulta,
     )
 
     context = {
@@ -235,6 +255,12 @@ def aulas_disponibles(request):
         "aula_id": aula_id,
 
         "docente_seleccionado": docente_id,
+
+        "dias_semana": DIAS_SEMANA,
+
+        "dia_seleccionado": dia_seleccionado,
+
+        "dia_actual_nombre": dict(DIAS_SEMANA)[dia_actual],
 
         "hora": hora_buscada_str,
 

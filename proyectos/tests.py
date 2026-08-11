@@ -93,6 +93,15 @@ class SIGEATestCase(TestCase):
         self.assertContains(respuesta, 'Sin programación registrada')
         self.assertContains(respuesta, 'Ver programación completa')
 
+    def test_filtro_de_dia_calcula_el_estado_para_el_dia_consultado(self):
+        respuesta = self.client.get('/consultar-aulas/?dia=1&hora=08:30', HTTP_HOST='inst1.localhost')
+        self.assertEqual(respuesta.status_code, 200)
+        tarjetas = {item['aula'].nombre: item for item in respuesta.context['resultado']}
+
+        self.assertEqual(respuesta.context['dia_seleccionado'], '1')
+        self.assertEqual(tarjetas['A-101']['estado'], 'OCUPADA')
+        self.assertEqual(tarjetas['A-101']['clase_actual'].nrc, 'MAT-1')
+
     def test_reassignment_requires_post_and_uses_available_room(self):
         url = f"/conflictos/reasignar/{self.clase.id}/{self.aula_alterna.id}/"
         respuesta = self.client.get(url, HTTP_HOST="inst1.localhost")

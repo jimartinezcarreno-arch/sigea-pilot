@@ -103,6 +103,26 @@ selected
 
 </div>
 
+<div class="mb-3">
+
+<label>Día</label>
+
+<select
+    class="form-select"
+    name="dia"
+    id="id_dia">
+
+    <option value="">Hoy ({{ dia_actual_nombre }})</option>
+
+    {% for numero_dia, nombre_dia in dias_semana %}
+    <option value="{{ numero_dia }}" {% if dia_seleccionado == numero_dia|stringformat:"s" %}selected{% endif %}>
+        {{ nombre_dia }}
+    </option>
+    {% endfor %}
+
+</select>
+</div>
+
 
 <div class="mb-3">
 
@@ -496,6 +516,10 @@ Revisar archivo Excel
 
 </div>
 
+<div id="estadoFiltroVacio" class="alert alert-info py-2 px-3 small mb-3" role="status" hidden>
+    No hay espacios con ese estado en los filtros actuales. Se mantienen visibles los demás espacios.
+</div>
+
 <div id="aulasGrid" class="aulas-grid" aria-live="polite">
 {% for item in resultado %}
 
@@ -719,6 +743,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const edificio = document.getElementById("id_edificio");
     const aula = document.getElementById("id_aula");
     const docente = document.getElementById("id_docente");
+    const dia = document.getElementById("id_dia");
     const hora = document.getElementById("id_hora");
     const formBusqueda = document.getElementById("formBusqueda");
 
@@ -769,6 +794,9 @@ document.addEventListener('DOMContentLoaded', function() {
     docente.addEventListener("change", function() {
         formBusqueda.submit();
     });
+    dia.addEventListener("change", function() {
+        formBusqueda.submit();
+    });
     hora.addEventListener("change", function() {
         formBusqueda.submit();
     });
@@ -788,6 +816,7 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function () {
     const grid = document.getElementById('aulasGrid');
     const filterButtons = document.querySelectorAll('.stats-filter');
+    const estadoFiltroVacio = document.getElementById('estadoFiltroVacio');
     let estadoActivo = '';
 
     function columnasActuales(anchoDisponible) {
@@ -826,13 +855,32 @@ document.addEventListener('DOMContentLoaded', function () {
 
     filterButtons.forEach(button => {
         button.addEventListener('click', function () {
-            estadoActivo = this.dataset.filtroEstado;
+            const siguienteEstado = this.dataset.filtroEstado;
+            const coincidencias = siguienteEstado
+                ? grid.querySelectorAll(`.dashboard-card[data-estado="${siguienteEstado}"]`).length
+                : 1;
+
+            // Si el contador es cero, el filtro no debe dejar el tablero vacío.
+            // Conservamos las tarjetas visibles y explicamos por qué no se aplicó.
+            if (siguienteEstado && coincidencias === 0) {
+                estadoActivo = '';
+                estadoFiltroVacio.hidden = false;
+            } else {
+                estadoActivo = siguienteEstado;
+                estadoFiltroVacio.hidden = true;
+            }
             filterButtons.forEach(control => {
-                const activo = control === this;
+                const activo = estadoActivo === control.dataset.filtroEstado;
                 control.classList.toggle('is-active', activo);
                 control.setAttribute('aria-pressed', activo);
             });
             organizarTarjetas();
+        });
+    });
+
+    grid.querySelectorAll('.programacion-completa').forEach(detalle => {
+        detalle.addEventListener('toggle', () => {
+            window.requestAnimationFrame(organizarTarjetas);
         });
     });
 
